@@ -3,15 +3,15 @@
 #include <string.h>
 #include <math.h>
 #include "raylib.h"
-#include <unistd.h>  // for getopt
+#include <unistd.h>  
 
-// Configuration
-#define DEFAULT_TEXT "SUCA"
-#define DEFAULT_FONT_SIZE 10
+// Defaults
+#define DEFAULT_TEXT "TEXT"
+#define DEFAULT_FONT_SIZE 14
 #define DEFAULT_TEXT_COLOR WHITE
 #define DEFAULT_GRID_COLOR BLUE
 #define DEFAULT_BACKGROUND_COLOR BLACK
-#define DEFAULT_SPEED 1 // pixel per second
+#define DEFAULT_SPEED 10 // pixel per second
 #define DEFAULT_WINDOW_WIDTH 1280  // 720p width
 #define DEFAULT_WINDOW_HEIGHT 720  // 720p height
 #define DEFAULT_GRID_COLS 22
@@ -89,9 +89,9 @@ int main(int argc, char *argv[]) {
     // Initialize text state with new parameters
     TextState textState = {
         .position = direction == HORIZONTAL ? 
-            (Vector2){(float)(-MeasureText(text, fontSize)), (float)(gridRows - fontSize) / 2} :
-            (Vector2){(float)(gridCols - fontSize) / 2, (float)(gridRows + fontSize * (strlen(text) - 1))},
-        .velocity = direction == HORIZONTAL ? (Vector2){speed, 0} : (Vector2){0, -speed},
+            (Vector2){(float)gridCols, (float)(gridRows - fontSize) / 2} : 
+            (Vector2){(float)(gridCols - (fontSize*0.5)) / 2, (float)gridRows},
+        .velocity = direction == HORIZONTAL ? (Vector2){-speed, 0} : (Vector2){0, -speed},
         .text = text,
         .color = textColor
     };
@@ -202,21 +202,15 @@ void DrawPixelGrid(bool** grid, int cols, int rows, float cellWidth, float cellH
 // Update text position with wrapping
 void UpdateTextPosition(TextState* state, int cols, int rows, int fontSize) {
     if (direction == HORIZONTAL) {
-        state->position.x += 1;
+        state->position.x -= 1;
         int textWidth = MeasureText(state->text, fontSize);
-        if (state->position.x > cols) {
-            state->position.x = -textWidth;
-        }
-        else if (state->position.x + textWidth < 0) {
+        if (state->position.x + textWidth < 0) {
             state->position.x = cols;
         }
     } else {
-        state->position.y += 1;
+        state->position.y -= 1;
         int textHeight = strlen(state->text) * fontSize;
-        if (state->position.y > rows) {
-            state->position.y = -textHeight;
-        }
-        else if (state->position.y + textHeight < 0) {
+        if (state->position.y + textHeight < 0) {
             state->position.y = rows;
         }
     }
@@ -239,19 +233,12 @@ Color ParseColor(const char* colorStr) {
 // Update DrawText function
 void DrawTextState(TextState* state, int fontSize) {
     if (direction == HORIZONTAL) {
-        // Original horizontal text
-        DrawText(state->text, (int)state->position.x, (int)state->position.y, fontSize, state->color);
+        DrawText(state->text, state->position.x, state->position.y, fontSize, state->color);
     } else {
-        // Vertical text - draw each character separately
-        int yOffset = 0;
-        for (int i = 0; i < strlen(state->text); i++) {
-            char singleChar[2] = {state->text[i], '\0'};
-            DrawText(singleChar, 
-                    (int)state->position.x, 
-                    (int)state->position.y + yOffset, 
-                    fontSize, 
-                    state->color);
-            yOffset += fontSize;  // Move down for next character
+        int textLength = strlen(state->text);
+        for (int i = 0; i < textLength; i++) {
+            char character[2] = {state->text[i], '\0'};
+            DrawText(character, state->position.x, state->position.y + (i * fontSize), fontSize, state->color);
         }
     }
 }
