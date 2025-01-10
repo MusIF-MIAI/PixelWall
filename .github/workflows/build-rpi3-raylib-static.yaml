@@ -22,14 +22,24 @@ jobs:
           gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
           make cmake
 
+    - name: Cache sysroot
+      id: cache-sysroot
+      uses: actions/cache@v3
+      with:
+        path: ./sysroot
+        key: sysroot-buster-${{ runner.os }}-${{ hashFiles('build-rpi3-raylib-static.yaml') }}
+        restore-keys: |
+          sysroot-buster-${{ runner.os }}-
+
     - name: Create sysroot for Raspbian Buster
+      if: steps.cache-sysroot.outputs.cache-hit != 'true'
       run: |
         mkdir -p ./sysroot
         sudo debootstrap --arch=armhf --foreign buster ./sysroot http://raspbian.raspberrypi.org/raspbian/
         sudo cp /usr/bin/qemu-arm-static ./sysroot/usr/bin/
         sudo chroot ./sysroot /debootstrap/debootstrap --second-stage
         sudo chroot ./sysroot apt update
-        sudo chroot ./sysroot apt install -y libgbm-dev libdrm-dev libasound2-dev libdrm-dev libegl1-mesa-dev libgles2-mesa-dev libgbm-dev libdrm-dev
+        sudo chroot ./sysroot apt install -y libgbm-dev libasound2-dev libdrm-dev libegl1-mesa-dev libgles2-mesa-dev libgbm-dev libdrm-dev
 
     - name: Create CMake toolchain file
       run: |
@@ -47,6 +57,24 @@ jobs:
     #  run: |
     #    find . -iname drm.h
     #    ls ./sysroot/usr/include/libdrm/drm.h
+    - name: Verify glibc versions
+      run: |
+        echo "Checking glibc version in sysroot..."
+        SYSROOT_GLIBC_VERSION=$(strings ./sysroot/lib/arm-linux-gnueabihf/libc.so.6 | grep -oP 'GLIBC_[0-9]+\.[0-9]+' | sort -V | tail -n 1)
+        echo "Sysroot glibc version: $SYSROOT_GLIBC_VERSION"
+
+        echo "Checking glibc version used by cross-compiler..."
+        CROSS_GLIBC_VERSION=$(arm-linux-gnueabihf-gcc -print-libgcc-file-name | xargs strings | grep -oP 'GLIBC_[0-9]+\.[0-9]+' | sort -V | tail -n 1)
+        echo "Cross-compiler glibc version: $CROSS_GLIBC_VERSION"
+
+        if [ "$SYSROOT_GLIBC_VERSION" != "$CROSS_GLIBC_VERSION" ]; then
+          echo "Error: glibc versions do not match!"
+          echo "Sysroot glibc version: $SYSROOT_GLIBC_VERSION"
+          echo "Cross-compiler glibc version: $CROSS_GLIBC_VERSION"
+          exit 1
+        else
+          echo "glibc versions match: $SYSROOT_GLIBC_VERSION"
+        fi
 
     - name: Build raylib (static) for Raspberry Pi
       run: |
