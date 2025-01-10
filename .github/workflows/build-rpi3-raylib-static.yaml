@@ -36,7 +36,7 @@ jobs:
         git clone --depth 1 https://github.com/raysan5/raylib.git
         cd raylib/src/
         export SYSROOT=$(pwd)/sysroot
-        make PLATFORM=PLATFORM_RPI SYSROOT=$SYSROOT   CC=arm-linux-gnueabihf-gcc
+        make PLATFORM=PLATFORM_DRM SYSROOT=$SYSROOT RPI_TOOLCHAIN=$(pwd)/sysroot/usr/ USE_RPI_CROSS_COMPILER=TRUE  CC=arm-linux-gnueabihf-gcc
         make
         make install
 
