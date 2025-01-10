@@ -43,6 +43,11 @@ jobs:
         echo "set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)" >> toolchain.cmake
         echo "set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)" >> toolchain.cmake
 
+    - name: Verify drm.h in sysroot
+      run: |
+        find . -iname drm.h
+        ls ./sysroot/usr/include/libdrm/drm.h
+
     - name: Build raylib (static) for Raspberry Pi
       run: |
         git clone --depth 1 https://github.com/raysan5/raylib.git
