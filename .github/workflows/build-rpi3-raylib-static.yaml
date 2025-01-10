@@ -58,7 +58,7 @@ jobs:
         cmake -DPLATFORM="DRM" \
               -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake \
               -DBUILD_SHARED_LIBS=OFF \
-              -DCMAKE_C_FLAGS="-I$(SYSROOT)/usr/include/libdrm" \
+              -DCMAKE_C_FLAGS="-I${SYSROOT}/usr/include/libdrm" \
               ..
         make
         make install
