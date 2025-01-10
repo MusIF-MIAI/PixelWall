@@ -34,8 +34,8 @@ jobs:
     - name: Build raylib (static) for Raspberry Pi
       run: |
         git clone --depth 1 https://github.com/raysan5/raylib.git
-        mkdir -p raylib/build
-        cd raylib/build
+        mkdir -p raylib/src/build
+        cd raylib/src/build
         cmake .. \
           -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchains/arm-linux-gnueabihf.toolchain.cmake \
           -DCMAKE_INSTALL_PREFIX=../../sysroot/usr \
