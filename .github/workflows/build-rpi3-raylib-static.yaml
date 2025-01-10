@@ -29,7 +29,7 @@ jobs:
         sudo cp /usr/bin/qemu-arm-static ./sysroot/usr/bin/
         sudo chroot ./sysroot /debootstrap/debootstrap --second-stage
         sudo chroot ./sysroot apt update
-        sudo chroot ./sysroot apt install -y libraspberrypi-dev libgbm-dev libdrm-dev libasound2-dev
+        sudo chroot ./sysroot apt install -y libgbm-dev libdrm-dev libasound2-dev
 
     - name: Build raylib (static) for Raspberry Pi
       run: |
