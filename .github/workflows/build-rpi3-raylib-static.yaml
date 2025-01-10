@@ -31,12 +31,25 @@ jobs:
         sudo chroot ./sysroot apt update
         sudo chroot ./sysroot apt install -y libgbm-dev libdrm-dev libasound2-dev libdrm-dev libegl1-mesa-dev libgles2-mesa-dev libgbm-dev
 
+    - name: Create CMake toolchain file
+      run: |
+        echo "set(CMAKE_SYSTEM_NAME Linux)" > toolchain.cmake
+        echo "set(CMAKE_SYSTEM_PROCESSOR arm)" >> toolchain.cmake
+        echo "set(CMAKE_C_COMPILER arm-linux-gnueabihf-gcc)" >> toolchain.cmake
+        echo "set(CMAKE_CXX_COMPILER arm-linux-gnueabihf-g++)" >> toolchain.cmake
+        echo "set(CMAKE_SYSROOT $(pwd)/sysroot)" >> toolchain.cmake
+        echo "set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)" >> toolchain.cmake
+        echo "set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)" >> toolchain.cmake
+        echo "set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)" >> toolchain.cmake
+        echo "set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)" >> toolchain.cmake
+
     - name: Build raylib (static) for Raspberry Pi
       run: |
         git clone --depth 1 https://github.com/raysan5/raylib.git
-        cd raylib/src/
-        export SYSROOT=$(pwd)/sysroot
-        make PLATFORM=PLATFORM_DRM SYSROOT=$SYSROOT RPI_TOOLCHAIN=$(pwd)/sysroot/usr/ USE_RPI_CROSS_COMPILER=TRUE  CC=arm-linux-gnueabihf-gcc
+        cd raylib
+        mkdir build
+        cd build
+        cmake -DPLATFORM="DRM" -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -DBUILD_SHARED_LIBS=OFF ..
         make
         make install
 
