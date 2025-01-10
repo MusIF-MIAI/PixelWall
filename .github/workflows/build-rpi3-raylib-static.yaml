@@ -1,0 +1,57 @@
+name: Build for Raspberry Pi 3 with raylib (static)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          qemu-utils qemu-user-static debootstrap \
+          gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
+          make cmake
+
+    - name: Create sysroot for Raspbian Buster
+      run: |
+        mkdir -p ./sysroot
+        sudo debootstrap --arch=armhf --foreign buster ./sysroot http://raspbian.raspberrypi.org/raspbian/
+        sudo cp /usr/bin/qemu-arm-static ./sysroot/usr/bin/
+        sudo chroot ./sysroot /debootstrap/debootstrap --second-stage
+        sudo chroot ./sysroot apt update
+        sudo chroot ./sysroot apt install -y libraspberrypi-dev libgbm-dev libdrm-dev libasound2-dev
+
+    - name: Build raylib (static) for Raspberry Pi
+      run: |
+        git clone --depth 1 https://github.com/raysan5/raylib.git
+        mkdir -p raylib/build
+        cd raylib/build
+        cmake .. \
+          -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchains/arm-linux-gnueabihf.toolchain.cmake \
+          -DCMAKE_INSTALL_PREFIX=../../sysroot/usr \
+          -DPLATFORM=RPI \
+          -DSUPPORT_MODULE_RPI_NO_X=ON \
+          -DBUILD_SHARED_LIBS=OFF
+        make
+        make install
+
+    - name: Build the project
+      run: |
+        export SYSROOT=$(pwd)/sysroot
+        make SYSROOT=$SYSROOT
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: rpi3-binary
+        path: ./snake_animation
+
