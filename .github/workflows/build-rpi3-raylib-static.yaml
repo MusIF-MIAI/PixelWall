@@ -26,6 +26,7 @@ jobs:
       id: cache-sysroot
       uses: actions/cache@v4
       with:
+        save-always: true
         path: ./sysroot
         key: sysroot-buster
 
