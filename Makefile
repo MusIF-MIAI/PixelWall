@@ -2,12 +2,12 @@
 CC       ?= arm-linux-gnueabihf-gcc
 CFLAGS   ?= -O2 -Wall
 LDFLAGS  ?=
-SYSROOT  ?= ./sysroot
+SYSROOT  ?= ../sysroot
 TARGET   ?= snake_animation
 
 # Percorsi
-INCLUDES ?= -I$(SYSROOT)/usr/include
-LIBS     ?= -L$(SYSROOT)/usr/lib -L$(SYSROOT)/lib -l:raylib.a -ldrm -lgbm -lasound -lpthread -lm
+INCLUDES ?= -I$(SYSROOT)/usr/include  -I ../raylib/src/
+LIBS     ?= -L$(SYSROOT)/usr/lib -L$(SYSROOT)/lib  -lraylib -lGL -lm -ldrm -lgbm -lEGL  -L ../raylib/src/ -o snake
 
 # Regole
 all: $(TARGET)

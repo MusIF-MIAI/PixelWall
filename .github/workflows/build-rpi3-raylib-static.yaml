@@ -27,9 +27,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ./sysroot
-        key: sysroot-buster-${{ runner.os }}-${{ hashFiles('build-rpi3-raylib-static.yaml') }}
-        restore-keys: |
-          sysroot-buster-${{ runner.os }}-
+        key: sysroot-buster
 
     - name: Create sysroot for Raspbian Buster
       if: steps.cache-sysroot.outputs.cache-hit != 'true'
