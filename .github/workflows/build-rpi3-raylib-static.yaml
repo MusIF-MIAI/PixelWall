@@ -22,8 +22,8 @@ jobs:
           gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
           make cmake
 
-    - name: Cache sysroot
-      id: cache-sysroot
+    - name: Restore cache sysroot
+      id: restore-cache-sysroot
       uses: actions/cache/restore@v4
       with:
         path: ./sysroot
@@ -39,8 +39,8 @@ jobs:
         sudo chroot ./sysroot apt update
         sudo chroot ./sysroot apt install -y libgbm-dev libasound2-dev libdrm-dev libegl1-mesa-dev libgles2-mesa-dev libgbm-dev libdrm-dev libgles-dev
 
-    - name: Cache sysroot
-      id: cache-sysroot
+    - name: Save cache sysroot
+      id: save-cache-sysroot
       uses: actions/cache/save@v4
       with:
         path: ./sysroot
