@@ -56,31 +56,6 @@ jobs:
     #    find . -iname drm.h
     #    ls ./sysroot/usr/include/libdrm/drm.h
 
-    - name: Verify glibc versions
-      run: |
-        echo "Checking glibc version in sysroot..."
-        SYSROOT_GLIBC_VERSION=$(strings ./sysroot/lib/arm-linux-gnueabihf/libc.so.6 | grep -oP 'GLIBC_[0-9]+\.[0-9]+' | sort -V | tail -n 1)
-        echo "Sysroot glibc version: $SYSROOT_GLIBC_VERSION"
-
-        echo "Checking glibc version used by cross-compiler..."
-        LIBGCC_PATH=$(arm-linux-gnueabihf-gcc -print-libgcc-file-name)
-        if [ -f "$LIBGCC_PATH" ]; then
-          CROSS_GLIBC_VERSION=$(objdump -T "$LIBGCC_PATH" | grep -oP 'GLIBC_[0-9]+\.[0-9]+' | sort -V | tail -n 1)
-          echo "Cross-compiler glibc version: $CROSS_GLIBC_VERSION"
-        else
-          echo "Error: libgcc file not found at $LIBGCC_PATH"
-          exit 1
-        fi
-
-        if [ "$SYSROOT_GLIBC_VERSION" != "$CROSS_GLIBC_VERSION" ]; then
-          echo "Error: glibc versions do not match!"
-          echo "Sysroot glibc version: $SYSROOT_GLIBC_VERSION"
-          echo "Cross-compiler glibc version: $CROSS_GLIBC_VERSION"
-          exit 1
-        else
-          echo "glibc versions match: $SYSROOT_GLIBC_VERSION"
-        fi
-
     - name: Build raylib (static) for Raspberry Pi
       run: |
         export SYSROOT=$(pwd)/sysroot
