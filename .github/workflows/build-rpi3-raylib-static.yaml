@@ -51,7 +51,7 @@ jobs:
         export SYSROOT=$(pwd)/sysroot
         git clone --depth 1 https://github.com/raysan5/raylib.git
         cd raylib/src
-        make PLATFORM=PLATFORM_DRM USE_RPI_CROSS_COMPILER=TRUE RPI_TOOLCHAIN=/usr RPI_TOOLCHAIN_NAME=arm-linux-gnueabihf INCLUDE_PATHS='-I . -I ../../sysroot/usr/include -I ../../sysroot/usr/include/libdrm'
+        make PLATFORM=PLATFORM_DRM USE_RPI_CROSS_COMPILER=TRUE RPI_TOOLCHAIN=/usr RPI_TOOLCHAIN_NAME=arm-linux-gnueabihf INCLUDE_PATHS=' -nostdinc -isystem ../../sysroot/usr/include -I . -I ../../sysroot/usr/include -I ../../sysroot/usr/include/libdrm'
 
     - name: Build the project
       run: |
