@@ -6,7 +6,7 @@ SYSROOT  ?= ../sysroot
 TARGET   ?= snake_animation
 
 # Percorsi
-INCLUDES ?= -I$(SYSROOT)/usr/include  -I ../raylib/src/
+INCLUDES ?= -I$(SYSROOT)/usr/include  -I raylib/src/
 LIBS     ?= -L$(SYSROOT)/usr/lib -L$(SYSROOT)/lib  -lraylib -lGL -lm -ldrm -lgbm -lEGL  -L ../raylib/src/ -o snake
 
 # Regole
