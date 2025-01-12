@@ -41,6 +41,7 @@ jobs:
         sudo chroot ./sysroot apt install -y libgbm-dev libasound2-dev libdrm-dev libegl1-mesa-dev libgles2-mesa-dev libgbm-dev libdrm-dev
 
     - name: Save cache sysroot
+      if: steps.restore-cache-sysroot.outputs.cache-hit != 'true'
       id: save-cache-sysroot
       uses: actions/cache/save@v4
       with:
