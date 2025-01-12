@@ -38,11 +38,11 @@ jobs:
         sudo cp /usr/bin/qemu-arm-static ./sysroot/usr/bin/
         sudo chroot ./sysroot /debootstrap/debootstrap --second-stage
         sudo chroot ./sysroot apt update
-        sudo chroot ./sysroot apt install -y libgbm-dev libasound2-dev libdrm-dev libegl1-mesa-dev libgles2-mesa-dev libgbm-dev libdrm-dev
+        sudo chroot ./sysroot apt install -y libgbm-dev libasound2-dev libdrm-dev libegl1-mesa-dev libgles2-mesa-dev libgbm-dev libdrm-dev build-essential
     
     - name: Create sysroot for Raspbian Buster
       run: |
-        sudo chroot ./sysroot apt install -y libc-11-dev libc-12-dev
+        sudo chroot ./sysroot apt install -y build-essential
     - name: Save cache sysroot
       id: save-cache-sysroot
       uses: actions/cache/save@v4
