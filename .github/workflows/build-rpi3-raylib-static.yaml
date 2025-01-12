@@ -31,7 +31,7 @@ jobs:
         key: sysroot-buster
 
     - name: Create sysroot for Raspbian Buster
-      if: steps.cache-sysroot.outputs.cache-hit != 'true'
+      if: steps.restore-cache-sysroot.outputs.cache-hit != 'true'
       run: |
         mkdir -p ./sysroot
         sudo debootstrap --arch=armhf --foreign buster ./sysroot http://raspbian.raspberrypi.org/raspbian/
