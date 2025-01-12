@@ -39,14 +39,16 @@ jobs:
         sudo chroot ./sysroot /debootstrap/debootstrap --second-stage
         sudo chroot ./sysroot apt update
         sudo chroot ./sysroot apt install -y libgbm-dev libasound2-dev libdrm-dev libegl1-mesa-dev libgles2-mesa-dev libgbm-dev libdrm-dev
-
+    
+    - name: Create sysroot for Raspbian Buster
+      run: |
+        sudo chroot ./sysroot apt install -y libc-11-dev libc-12-dev
     - name: Save cache sysroot
-      if: steps.restore-cache-sysroot.outputs.cache-hit != 'true'
       id: save-cache-sysroot
       uses: actions/cache/save@v4
       with:
         path: ./sysroot
-        key: sysroot-buster
+        key: sysroot-buster-2
 
     - name: Build raylib (static) for Raspberry Pi
       run: |
