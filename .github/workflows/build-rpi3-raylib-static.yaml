@@ -51,6 +51,7 @@ jobs:
     - name: Build raylib (static) for Raspberry Pi
       run: |
         export SYSROOT=$(pwd)/sysroot
+        find sysroot -name stdarg.h
         git clone --depth 1 https://github.com/raysan5/raylib.git
         cd raylib/src
         echo $SYSROOT
