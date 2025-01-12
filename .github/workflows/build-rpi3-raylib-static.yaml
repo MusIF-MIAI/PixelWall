@@ -21,6 +21,7 @@ jobs:
           qemu-utils qemu-user-static debootstrap \
           gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf \
           make cmake
+        sudo chmod u+s /bin/tar
 
     - name: Restore cache sysroot
       id: restore-cache-sysroot
