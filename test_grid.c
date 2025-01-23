@@ -42,13 +42,9 @@ int WINDOW_HEIGHT = DEFAULT_WINDOW_HEIGHT;
 // Predefined color palette
 Color colorPalette[] = {
     (Color){255, 0, 0, 255},     // Red
-    (Color){0, 255, 0, 255},     // Green
-    (Color){0, 0, 255, 255},     // Blue
-    (Color){255, 255, 0, 255},   // Yellow
-    (Color){255, 0, 255, 255},   // Magenta
-    (Color){0, 255, 255, 255}    // Cyan
+    (Color){0, 255, 0, 255}     // Green
 };
-int paletteSize = 6;
+int paletteSize = 2;
 
 // Structure representing a single grid pixel
 typedef struct {
@@ -61,7 +57,7 @@ Pixel **grid = NULL;
 // Function to parse command line arguments
 void ParseCommandLine(int argc, char *argv[]) {
     int opt;
-    while ((opt = getopt(argc, argv, "hr:c:b:g:d:w:H:")) != -1) {
+    while ((opt = getopt(argc, argv, "hr:c:b:g:d:w:H:p:P:")) != -1) {
         switch (opt) {
             case 'h':  // Help option - display usage information and exit
                 printf("Contrasting Grid - Visual Art Generator\n\n");
@@ -77,8 +73,12 @@ void ParseCommandLine(int argc, char *argv[]) {
                        DEFAULT_DEACTIVE_COLOR.r, DEFAULT_DEACTIVE_COLOR.g, DEFAULT_DEACTIVE_COLOR.b);
                 printf("  -w WIDTH      Window width (default: %d)\n", DEFAULT_WINDOW_WIDTH);
                 printf("  -H HEIGHT     Window height (default: %d)\n", DEFAULT_WINDOW_HEIGHT);
+                printf("  -p R,G,B      First color (default: %d,%d,%d)\n",
+                       colorPalette[0].r, colorPalette[0].g, colorPalette[0].b);
+                printf("  -P R,G,B      Second color (default: %d,%d,%d)\n",
+                       colorPalette[1].r, colorPalette[1].g, colorPalette[1].b);
                 printf("Example:\n");
-                printf("  %s -r 20 -c 30 -w 1280 -H 720 -b 3 -g 255,0,0 -d 0,0,0\n", argv[0]);
+                printf("  %s -r 20 -c 30 -w 1280 -H 720 -b 3 -g 255,0,0 -d 0,0,0 -p 255,0,255 -P 0,255,255\n", argv[0]);
                 exit(EXIT_SUCCESS);
             
             case 'r':  // Set number of rows
@@ -154,6 +154,40 @@ void ParseCommandLine(int argc, char *argv[]) {
                     exit(EXIT_FAILURE);
                 }
                 break;
+            
+            case 'p': {  // Set first palette color
+                int r, g, b;
+                if (sscanf(optarg, "%d,%d,%d", &r, &g, &b) == 3) {
+                    if (r < 0 || r > MAX_COLOR_VALUE || 
+                        g < 0 || g > MAX_COLOR_VALUE || 
+                        b < 0 || b > MAX_COLOR_VALUE) {
+                        fprintf(stderr, "Color values must be between 0 and %d\n", MAX_COLOR_VALUE);
+                        exit(EXIT_FAILURE);
+                    }
+                    colorPalette[0] = (Color){r, g, b, 255};
+                } else {
+                    fprintf(stderr, "Invalid color format for -p. Use R,G,B (e.g., 255,0,0)\n");
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            }
+            
+            case 'P': {  // Set second palette color
+                int r, g, b;
+                if (sscanf(optarg, "%d,%d,%d", &r, &g, &b) == 3) {
+                    if (r < 0 || r > MAX_COLOR_VALUE || 
+                        g < 0 || g > MAX_COLOR_VALUE || 
+                        b < 0 || b > MAX_COLOR_VALUE) {
+                        fprintf(stderr, "Color values must be between 0 and %d\n", MAX_COLOR_VALUE);
+                        exit(EXIT_FAILURE);
+                    }
+                    colorPalette[1] = (Color){r, g, b, 255};
+                } else {
+                    fprintf(stderr, "Invalid color format for -P. Use R,G,B (e.g., 0,255,0)\n");
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            }
             
             default:  // Handle unknown options
                 fprintf(stderr, "Usage: %s [-r rows] [-c cols] [-b border_size] "
