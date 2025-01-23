@@ -1,0 +1,29 @@
+<body style="margin: 0; padding: 0; overflow: hidden;">
+
+<div id="topbar" style="position: fixed; top: 0; left: 0; width: 100%;">
+	<h2>GIGIPROIETTALO: <button onclick="save_image()">MANDA AL PROIETTORE!</button></h2>
+</div>
+
+<iframe id="content" style="position: absolute; width: 100%; height: calc(100% - 80px); border: 0; top: 80px;" src="editor.html" allow="camera"></iframe>
+
+<script>
+function save_image(){
+	var Layers = content.contentWindow.Layers;
+	var tempCanvas = document.createElement("canvas");
+	var tempCtx = tempCanvas.getContext("2d");
+	var dim = Layers.get_dimensions();
+	tempCanvas.width = dim.width;
+	tempCanvas.height = dim.height;
+	Layers.convert_layers_to_canvas(tempCtx);
+	
+    tempCanvas.toBlob(function (blob) {
+        fetch("http://localhost:1337/putimage", { method: "POST", body: blob })
+
+    }, 'image/png');
+}
+
+window.onload = function () {
+	//open_image(document.getElementById('testImage'));  //uncomment me
+};
+
+</script>
