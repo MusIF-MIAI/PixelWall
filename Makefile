@@ -15,7 +15,7 @@ CFLAGS ?= -I$(RAYLIB_PATH)/include $(RAYLIB_LIBS)
 CXXFLAGS ?= $(CFLAGS) -std=c++11
 LDLIBS ?= $(RAYLIB_PATH)/libraylib.a
 
-ALL_PROGRAMS := random_pixels snake_animation text gigiproiettalo
+ALL_PROGRAMS := random_pixels snake_animation text gigiproiettalo test_grid
 
 .PHONY: all
 all: $(ALL_PROGRAMS)
@@ -23,6 +23,7 @@ all: $(ALL_PROGRAMS)
 random_pixels: random_pixels.c
 snake_animation: snake_animation.c
 text: text.c
+test_grid: test_grid.c
 gigiproiettalo: gigiproiettalo.cpp
 
 clean:
