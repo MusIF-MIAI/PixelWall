@@ -16,6 +16,45 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
 #include "design.h"
 
+typedef struct {
+    int wormLength;
+    int maxWormLength;
+    Color wormColor;
+} SnakeConf;
+
+SnakeConf defaultSnakeConf = {
+    .wormLength = 5,
+    .maxWormLength = 100,
+    .wormColor = GREEN,
+};
+
+typedef struct {
+    Pos position;
+    Color color;
+} Segment;
+
+typedef struct {
+    Pos position;
+    Color color;
+} Fruit;
+
+typedef struct {
+    Segment *body;      // Pointer to dynamically allocated array
+    int length;         // Current length of the worm
+    int max_length;     // Maximum allocated length
+    Vector2 direction;  // Current movement direction
+} Worm;
+
+// Main game state structure
+typedef struct {
+    SnakeConf conf;
+    Worm worm;          // The snake/worm object
+    Fruit fruit;        // The fruit object
+    float moveTimer;    // Timer for movement updates
+    Pos currentDir;     // Current movement direction
+    bool gameOver;      // Game over flag
+} GameState;
+
 #define CELL_WORM  (1 << 0)
 #define CELL_FRUIT (1 << 1)
 
@@ -111,7 +150,7 @@ void UpdateWormPosition(Grid *grid, GameState *state, Pos newHead, bool growing)
     } else {
         // Clear the old tail position only if not growing
         Pos oldTail = state->worm.body[state->worm.length - 1].position;
-        GridSetColor(grid, oldTail, state->conf.backgroundColor);
+        GridSetColor(grid, oldTail, grid->conf.backgroundColor);
         GridSetWorm(grid, oldTail, false);
     }
     
@@ -170,13 +209,12 @@ void UpdateAI(Grid *grid, GameState *state) {
     for (int i = 0; i < 4; i++) {
         Pos dir = directions[i];
         Pos newPos = {head.x + dir.x, head.y + dir.y};
-        
         if (IsSafeMove(grid, newPos)) {
             state->currentDir = dir;
             return;
         }
     }
-    
+
     // If no safe moves found, keep current direction (will trigger game over)
 }
 
@@ -219,52 +257,66 @@ void ResizeWorm(Worm *worm, int new_max_length) {
     }
 }
 
-void DesignCleanup(GameState *state) {
+void DesignDestroy(void *data) {
+    GameState *state = (GameState *)data;
     if (state->worm.body) {
         free(state->worm.body);
         state->worm.body = NULL;
     }
-    state->worm.length = 0;
-    state->worm.max_length = 0;
+    free(state);
 }
 
-void ParseSnakeOptions(GameState *state, int argc, char *argv[]) {
+void ParseSnakeOptions(SnakeConf *conf, int argc, char *argv[]) {
     int opt;
-    while ((opt = getopt(argc, argv, "l:m:W:")) != -1) {
+
+    while ((opt = getopt(argc, argv, ":l:m:W:")) != -1) {
         switch (opt) {
             case 'l':
-                state->conf.wormLength = atoi(optarg);
-                if (state->conf.wormLength < 1) state->conf.wormLength = 1;
+                conf->wormLength = atoi(optarg);
+                if (conf->wormLength < 1) conf->wormLength = 1;
                 break;
             case 'm':
-                state->conf.maxWormLength = atoi(optarg);
+                conf->maxWormLength = atoi(optarg);
                 break;
             case 'W':
-                state->conf.wormColor = ParseColor(optarg);
+                conf->wormColor = ParseColor(optarg);
                 break;
         }
     }
-
-    optind = 1;
 }
 
-void DesignInit(Grid *grid, GameState *state, int argc, char *argv[]) {
-    ParseSnakeOptions(state, argc, argv);
+void DesignPrintHelp() {
+    printf("  -W <color>       Set worm color (R,G,B, default: %d,%d,%d)\n",
+           defaultSnakeConf.wormColor.r, defaultSnakeConf.wormColor.g, defaultSnakeConf.wormColor.b);
+    printf("  -l <length>      Set initial worm length (default: %d)\n", defaultSnakeConf.wormLength);
+    printf("  -m <length>      Set maximum worm length (default: %d)\n", defaultSnakeConf.maxWormLength);
+}
+
+void *DesignCreate(Grid *grid, int argc, char *argv[]) {
+    GameState *state = (GameState *)malloc(sizeof(GameState));
+    if (!state) return NULL;
+
+    memset(state, 0, sizeof(GameState));
+    state->conf = defaultSnakeConf;
+    ParseSnakeOptions(&state->conf, argc, argv);
+
     InitializeWorm(grid, state);
     InitializeFruit(grid, state);
 
     state->moveTimer = 0.0f;  // Initialize movement timer
     state->currentDir = GetRandomDirection();  // Set initial direction
     state->gameOver = false;  // Game is running
+    return state;
 }
 
-void DesignUpdateFrame(Grid *grid, GameState *state) {
-     // Update game state
+void DesignUpdateFrame(Grid *grid, void *data) {
+    // Update game state
+    GameState *state = (GameState *)data;
     state->moveTimer += GetFrameTime();
-    if (state->moveTimer >= state->conf.moveInterval) {
+    if (state->moveTimer >= grid->conf.moveInterval) {
         if (state->gameOver) {
             // Reset game state if game over
-            GridFillColor(grid, state->conf.backgroundColor);
+            GridFillColor(grid, grid->conf.backgroundColor);
             GridFillData(grid, 0);
 
             InitializeWorm(grid, state);

@@ -16,19 +16,19 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
 #include "design.h"
 
+Config defaultConf = {
+    .moveInterval = 0.2f,
+    .backgroundColor = BLACK,
+};
+
 // Configuration
 #define DEFAULT_ROWS 16
 #define DEFAULT_COLS 22
 #define DEFAULT_WINDOW_WIDTH 1280
 #define DEFAULT_WINDOW_HEIGHT 720
 #define MAX_COLOR_VALUE 255
-#define DEFAULT_WORM_LENGTH 5
 #define DEFAULT_FRAME_RATE 10
-#define DEFAULT_MOVE_INTERVAL 0.2f
-#define DEFAULT_MAX_WORM_LENGTH 100
 #define DEFAULT_BORDER_SIZE 2  // Default border size in pixels
-#define DEFAULT_BACKGROUND_COLOR BLACK
-#define DEFAULT_WORM_COLOR GREEN
 #define DEFAULT_BORDER_COLOR GRAY
 
 // Update configuration variables
@@ -82,7 +82,6 @@ Pos GetRandomDirection() {
 }
 
 Grid theGrid;
-GameState theState;
 
 void DrawPixelGrid(const Grid *grid) {
     // Calculate cell dimensions excluding borders
@@ -170,21 +169,20 @@ void PrintHelp() {
     printf("Usage: snake_animation [options]\n");
     printf("Options:\n");
     printf("  -B <color>       Set background color (R,G,B, default: %d,%d,%d)\n",
-           DEFAULT_BACKGROUND_COLOR.r, DEFAULT_BACKGROUND_COLOR.g, DEFAULT_BACKGROUND_COLOR.b);
-    printf("  -W <color>       Set worm color (R,G,B, default: %d,%d,%d)\n",
-           DEFAULT_WORM_COLOR.r, DEFAULT_WORM_COLOR.g, DEFAULT_WORM_COLOR.b);
+           defaultConf.backgroundColor.r, defaultConf.backgroundColor.g, defaultConf.backgroundColor.b);
     printf("  -O <color>       Set border color (R,G,B, default: %d,%d,%d)\n",
            DEFAULT_BORDER_COLOR.r, DEFAULT_BORDER_COLOR.g, DEFAULT_BORDER_COLOR.b);
     printf("  -r <rows>        Set number of rows (default: %d)\n", DEFAULT_ROWS);
     printf("  -c <cols>        Set number of columns (default: %d)\n", DEFAULT_COLS);
     printf("  -w <width>       Set window width (default: %d)\n", DEFAULT_WINDOW_WIDTH);
     printf("  -H <height>      Set window height (default: %d)\n", DEFAULT_WINDOW_HEIGHT);
-    printf("  -l <length>      Set initial worm length (default: %d)\n", DEFAULT_WORM_LENGTH);
     printf("  -f <rate>        Set frame rate (default: %d)\n", DEFAULT_FRAME_RATE);
-    printf("  -i <interval>    Set move interval in seconds (default: %.1f)\n", DEFAULT_MOVE_INTERVAL);
+    printf("  -i <interval>    Set move interval in seconds (default: %.1f)\n", defaultConf.moveInterval);
     printf("  -b <size>        Set border size (default: %d)\n", DEFAULT_BORDER_SIZE);
-    printf("  -m <length>      Set maximum worm length (default: %d)\n", DEFAULT_MAX_WORM_LENGTH);
     printf("  -h               Show this help message\n");
+
+    printf("\n");
+    DesignPrintHelp();
 }
 
 Color ParseColor(const char *string) {
@@ -203,10 +201,9 @@ Color ParseColor(const char *string) {
     }
 }
 
-
-void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
+void ParseCommandLine(int argc, char *argv[], Grid *grid) {
     int opt;
-    while ((opt = getopt(argc, argv, "r:c:w:H:f:b:B:O:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":r:c:w:H:f:b:B:O:h")) != -1) {
         switch (opt) {
             case 'r':
                 grid->rows = atoi(optarg);
@@ -229,8 +226,8 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
                 if (FRAME_RATE < 1) FRAME_RATE = 1;
                 break;
             case 'i':
-                state->conf.moveInterval = atof(optarg);
-                if (state->conf.moveInterval < 0.1f) {
+                grid->conf.moveInterval = atof(optarg);
+                if (grid->conf.moveInterval < 0.1f) {
                     fprintf(stderr, "Move interval must be at least 0.1 seconds\n");
                     exit(EXIT_FAILURE);
                 }
@@ -239,26 +236,11 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
                 BORDER_SIZE = atoi(optarg);
                 if (BORDER_SIZE < 0) BORDER_SIZE = 0;
                 break;
-            case 'm':
-                state->conf.maxWormLength = atoi(optarg);
-                break;
             case 'B':  // Background color
+                grid->conf.backgroundColor = ParseColor(optarg);
+                break;
             case 'O': {  // Border color
-                int r, g, b;
-                if (sscanf(optarg, "%d,%d,%d", &r, &g, &b) == 3) {
-                    if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
-                        fprintf(stderr, "Color values must be between 0 and 255\n");
-                        exit(EXIT_FAILURE);
-                    }
-                    Color newColor = {r, g, b, 255};
-                    switch (opt) {
-                        case 'B': state->conf.backgroundColor = newColor; break;
-                        case 'O': BORDER_COLOR = newColor; break;
-                    }
-                } else {
-                    fprintf(stderr, "Invalid color format. Use R,G,B (e.g., 255,0,0)\n");
-                    exit(EXIT_FAILURE);
-                }
+                BORDER_COLOR = ParseColor(optarg);
                 break;
             } 
             case 'h':
@@ -266,29 +248,20 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
                 exit(EXIT_SUCCESS);
         }
     }
-
-    optind = 1;
 }
 
-void SetDefaults(Grid *grid, GameState *state) {
+void SetDefaults(Grid *grid) {
+    grid->conf = defaultConf;
     grid->rows = DEFAULT_ROWS;
     grid->cols = DEFAULT_COLS;
-
-    state->conf.wormLength = DEFAULT_WORM_LENGTH;
-    state->conf.maxWormLength = DEFAULT_MAX_WORM_LENGTH;
-    state->conf.moveInterval = DEFAULT_MOVE_INTERVAL;
-    state->conf.backgroundColor = DEFAULT_BACKGROUND_COLOR;
-    state->conf.wormColor = DEFAULT_WORM_COLOR;
 }
 
 // Main game loop
 int main(int argc, char *argv[]) {
     Grid *grid = &theGrid;
-    GameState *state = &theState;
 
-    SetDefaults(grid, state);
-    opterr = 0;
-    ParseCommandLine(argc, argv, grid, state);  
+    SetDefaults(grid);
+    ParseCommandLine(argc, argv, grid);
 
     // Initialize window and set frame rate
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Snake Animation");
@@ -299,10 +272,10 @@ int main(int argc, char *argv[]) {
     cellHeight = WINDOW_HEIGHT / grid->rows;
 
     GridInitialize(grid, grid->rows, grid->cols);
-    GridFillColor(grid, state->conf.backgroundColor);
+    GridFillColor(grid, grid->conf.backgroundColor);
     GridFillData(grid, 0);
 
-    DesignInit(grid, state, argc, argv);
+    void *state = DesignCreate(grid, argc, argv);
 
     // Main game loop
     while (!WindowShouldClose()) {
@@ -311,12 +284,12 @@ int main(int argc, char *argv[]) {
         
         // Draw game state
         BeginDrawing();
-            ClearBackground(state->conf.backgroundColor);
+            ClearBackground(grid->conf.backgroundColor);
             DrawPixelGrid(grid);
         EndDrawing();
     }
 
-    DesignCleanup(state);
+    DesignDestroy(state);
     GridCleanup(grid);
     CloseWindow();
     return 0;
