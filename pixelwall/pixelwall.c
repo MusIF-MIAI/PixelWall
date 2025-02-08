@@ -27,6 +27,7 @@ Config defaultConf = {
     .borderColor = GRAY,
     .moveInterval = 0.2f,
     .backgroundColor = BLACK,
+    .showData = false,
 };
 
 #define MAX_COLOR_VALUE 255
@@ -99,7 +100,9 @@ void DrawPixelGrid(const Grid *grid) {
             // Draw cell content
             Color cellColor = GridGetColor(grid, pos);
             DrawRectangle(x, y, cellWidthNoBorder, cellHeightNoBorder, cellColor);
-            DrawText(TextFormat("%d", GridGetData(grid, pos)), x + 5, y + 5, 18, WHITE);
+
+            if (grid->conf.showData)
+                DrawText(TextFormat("%d", GridGetData(grid, pos)), x + 5, y + 5, 18, WHITE);
         }
     }
     
@@ -273,15 +276,50 @@ int main(int argc, char *argv[]) {
     GridFillColor(grid, grid->conf.backgroundColor);
     GridFillData(grid, 0);
 
-    Design *design = designs[0];
+    int designIndex = 0;
+    Design *design = designs[designIndex];
 
     printf("Starting design: %s\n", design->name);
     void *data = design->Create(grid, argc, argv);
 
     float timer = 0;
+    bool changeDesign = false;
+    int designCount = sizeof(designs) / sizeof(Design *);
 
     // Main game loop
     while (!WindowShouldClose()) {
+        if (IsKeyPressed(KEY_SPACE)) {
+            grid->conf.showData = !grid->conf.showData;
+        }
+
+        if (IsKeyPressed(KEY_PERIOD)) {
+            designIndex++;
+            if (designIndex >= designCount) {
+                designIndex = 0;
+            }
+
+            changeDesign = true;
+        }
+
+        if (IsKeyPressed(KEY_COMMA)) {
+            designIndex--;
+            if (designIndex < 0) {
+                designIndex = designCount - 1;
+            }
+
+            changeDesign = true;
+        }
+
+        if (changeDesign) {
+            design->Destroy(data);
+            design = designs[designIndex];
+            printf("Switching to design: %s\n", design->name);
+            GridFillColor(grid, grid->conf.backgroundColor);
+            GridFillData(grid, 0);
+            data = design->Create(grid, argc, argv);
+            changeDesign = false;
+        }
+
         // Update game state
         timer += GetFrameTime();
 

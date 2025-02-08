@@ -33,6 +33,7 @@ typedef struct {
     float moveInterval;
     Color backgroundColor;
     Color borderColor;
+    bool showData;
 } Config;
 
 typedef struct {
