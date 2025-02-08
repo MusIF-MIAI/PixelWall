@@ -43,13 +43,19 @@ int cellHeight;
 
 // Initialize the game grid with default values
 void GridFillColor(Grid *grid, Color color) {
-    // Loop through all rows and columns
     for (int row = 0; row < grid->rows; row++) {
         for (int col = 0; col < grid->cols; col++) {
             Pos pos = { col, row };
-            GridPutColor(grid, pos, color);
-            grid->pixels[row][col].isWorm = false; // No worm initially
-            grid->pixels[row][col].isFruit = false; // No fruit initially
+            GridSetColor(grid, pos, color);
+        }
+    }
+}
+
+void GridFillData(Grid *grid, uintptr_t data) {
+    for (int row = 0; row < grid->rows; row++) {
+        for (int col = 0; col < grid->cols; col++) {
+            Pos pos = { col, row };
+            GridSetData(grid, pos, data);
         }
     }
 }
@@ -134,8 +140,16 @@ Color GridGetColor(const Grid *grid, Pos pos) {
     return grid->pixels[pos.y][pos.x].color;
 }
 
-void GridPutColor(Grid *grid, Pos pos, Color color) {
+void GridSetColor(Grid *grid, Pos pos, Color color) {
     grid->pixels[pos.y][pos.x].color = color;
+}
+
+uintptr_t GridGetData(const Grid *grid, Pos pos) {
+    return grid->pixels[pos.y][pos.x].data;
+}
+
+void GridSetData(Grid *grid, Pos pos, uintptr_t data) {
+    grid->pixels[pos.y][pos.x].data = data;
 }
 
 void GridCleanup(Grid *grid) {
@@ -286,6 +300,7 @@ int main(int argc, char *argv[]) {
 
     GridInitialize(grid, grid->rows, grid->cols);
     GridFillColor(grid, state->conf.backgroundColor);
+    GridFillData(grid, 0);
 
     DesignInit(grid, state, argc, argv);
 

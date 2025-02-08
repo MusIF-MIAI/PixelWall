@@ -26,8 +26,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 // Add Pixel struct definition
 typedef struct {
     Color color;
-    bool isWorm;
-    bool isFruit;
+    uintptr_t data;
 } Pixel;
 
 // Game objects
@@ -77,11 +76,14 @@ typedef struct {
   Pixel **pixels;
 } Grid;
 
-void GridInitialize(Grid *grid, int rows, int cols);
-void GridFillColor(Grid *grid, Color color);
-Color GridGetColor(const Grid *grid, Pos pos);
-void GridPutColor(Grid *grid, Pos pos, Color color);
+void  GridInitialize(Grid *grid, int rows, int cols);
+void  GridFillColor(Grid *grid, Color color);
+void GridFillData(Grid *grid, uintptr_t data);
 
+Color GridGetColor(const Grid *grid, Pos pos);
+void GridSetColor(Grid *grid, Pos pos, Color color);
+uintptr_t GridGetData(const Grid *grid, Pos pos);
+void GridSetData(Grid *grid, Pos pos, uintptr_t data);
 void GridCleanup(Grid *grid);
 
 void DesignInit(Grid *grid, GameState *state, int argc, char *argv[]);
