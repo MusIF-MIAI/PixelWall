@@ -209,7 +209,28 @@ void DesignCleanup(GameState *state) {
     state->worm.max_length = 0;
 }
 
-void DesignInit(Grid *grid, GameState *state) {
+void ParseSnakeOptions(GameState *state, int argc, char *argv[]) {
+    int opt;
+    while ((opt = getopt(argc, argv, "l:m:W:")) != -1) {
+        switch (opt) {
+            case 'l':
+                state->conf.wormLength = atoi(optarg);
+                if (state->conf.wormLength < 1) state->conf.wormLength = 1;
+                break;
+            case 'm':
+                state->conf.maxWormLength = atoi(optarg);
+                break;
+            case 'W':
+                state->conf.wormColor = ParseColor(optarg);
+                break;
+        }
+    }
+
+    optind = 1;
+}
+
+void DesignInit(Grid *grid, GameState *state, int argc, char *argv[]) {
+    ParseSnakeOptions(state, argc, argv);
     InitializeWorm(grid, state);
     InitializeFruit(grid, state);
 

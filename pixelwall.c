@@ -173,9 +173,26 @@ void PrintHelp() {
     printf("  -h               Show this help message\n");
 }
 
+Color ParseColor(const char *string) {
+    int r, g, b;
+
+    if (sscanf(string, "%d,%d,%d", &r, &g, &b) == 3) {
+        if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+            fprintf(stderr, "Color values must be between 0 and 255\n");
+            exit(EXIT_FAILURE);
+        }   
+
+        return (Color){ r, g, b, 255 };
+    } else {
+        fprintf(stderr, "Invalid color format. Use R,G,B (e.g., 255,0,0)\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+
 void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
     int opt;
-    while ((opt = getopt(argc, argv, "r:c:w:H:l:f:i:b:m:B:W:O:h")) != -1) {
+    while ((opt = getopt(argc, argv, "r:c:w:H:f:b:B:O:h")) != -1) {
         switch (opt) {
             case 'r':
                 grid->rows = atoi(optarg);
@@ -192,10 +209,6 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
             case 'H':
                 WINDOW_HEIGHT = atoi(optarg);
                 if (WINDOW_HEIGHT < 100) WINDOW_HEIGHT = 100;
-                break;
-            case 'l':
-                state->conf.wormLength = atoi(optarg);
-                if (state->conf.wormLength < 1) state->conf.wormLength = 1;
                 break;
             case 'f':
                 FRAME_RATE = atoi(optarg);
@@ -216,7 +229,6 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
                 state->conf.maxWormLength = atoi(optarg);
                 break;
             case 'B':  // Background color
-            case 'W':  // Worm color
             case 'O': {  // Border color
                 int r, g, b;
                 if (sscanf(optarg, "%d,%d,%d", &r, &g, &b) == 3) {
@@ -227,7 +239,6 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
                     Color newColor = {r, g, b, 255};
                     switch (opt) {
                         case 'B': state->conf.backgroundColor = newColor; break;
-                        case 'W': state->conf.wormColor = newColor; break;
                         case 'O': BORDER_COLOR = newColor; break;
                     }
                 } else {
@@ -237,11 +248,12 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
                 break;
             } 
             case 'h':
-            default:
                 PrintHelp();
                 exit(EXIT_SUCCESS);
         }
     }
+
+    optind = 1;
 }
 
 void SetDefaults(Grid *grid, GameState *state) {
@@ -261,7 +273,8 @@ int main(int argc, char *argv[]) {
     GameState *state = &theState;
 
     SetDefaults(grid, state);
-    ParseCommandLine(argc, argv, grid, state);
+    opterr = 0;
+    ParseCommandLine(argc, argv, grid, state);  
 
     // Initialize window and set frame rate
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Snake Animation");
@@ -274,7 +287,7 @@ int main(int argc, char *argv[]) {
     GridInitialize(grid, grid->rows, grid->cols);
     GridFillColor(grid, state->conf.backgroundColor);
 
-    DesignInit(grid, state);
+    DesignInit(grid, state, argc, argv);
 
     // Main game loop
     while (!WindowShouldClose()) {

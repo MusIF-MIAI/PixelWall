@@ -84,9 +84,10 @@ void GridPutColor(Grid *grid, Pos pos, Color color);
 
 void GridCleanup(Grid *grid);
 
-void DesignInit(Grid *grid, GameState *state);
+void DesignInit(Grid *grid, GameState *state, int argc, char *argv[]);
 void DesignUpdateFrame(Grid *grid, GameState *state);
 void DesignCleanup(GameState *state);
 
 Color GetRandomColor();
 Pos GetRandomDirection();
+Color ParseColor(const char *string);
