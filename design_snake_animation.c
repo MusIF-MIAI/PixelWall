@@ -50,7 +50,6 @@ typedef struct {
     SnakeConf conf;
     Worm worm;          // The snake/worm object
     Fruit fruit;        // The fruit object
-    float moveTimer;    // Timer for movement updates
     Pos currentDir;     // Current movement direction
     bool gameOver;      // Game over flag
 } GameState;
@@ -276,14 +275,14 @@ static void ParseSnakeOptions(SnakeConf *conf, int argc, char *argv[]) {
     }
 }
 
-void SnakePrintHelp() {
+static void SnakePrintHelp() {
     printf("  -W <color>       Set worm color (R,G,B, default: %d,%d,%d)\n",
            defaultSnakeConf.wormColor.r, defaultSnakeConf.wormColor.g, defaultSnakeConf.wormColor.b);
     printf("  -l <length>      Set initial worm length (default: %d)\n", defaultSnakeConf.wormLength);
     printf("  -m <length>      Set maximum worm length (default: %d)\n", defaultSnakeConf.maxWormLength);
 }
 
-void *SnakeCreate(Grid *grid, int argc, char *argv[]) {
+static void *SnakeCreate(Grid *grid, int argc, char *argv[]) {
     GameState *state = (GameState *)malloc(sizeof(GameState));
     if (!state) return NULL;
 
@@ -294,50 +293,44 @@ void *SnakeCreate(Grid *grid, int argc, char *argv[]) {
     InitializeWorm(grid, state);
     InitializeFruit(grid, state);
 
-    state->moveTimer = 0.0f;  // Initialize movement timer
     state->currentDir = GetRandomDirection();  // Set initial direction
     state->gameOver = false;  // Game is running
     return state;
 }
 
-void SnakeUpdateFrame(Grid *grid, void *data) {
+static void SnakeUpdateFrame(Grid *grid, void *data) {
     // Update game state
     GameState *state = (GameState *)data;
-    state->moveTimer += GetFrameTime();
-    if (state->moveTimer >= grid->conf.moveInterval) {
-        if (state->gameOver) {
-            // Reset game state if game over
-            GridFillColor(grid, grid->conf.backgroundColor);
-            GridFillData(grid, 0);
-
-            InitializeWorm(grid, state);
-            InitializeFruit(grid, state);
-            state->currentDir = GetRandomDirection();
-            state->gameOver = false;
+    if (state->gameOver) {
+        // Reset game state if game over
+        GridFillColor(grid, grid->conf.backgroundColor);
+        GridFillData(grid, 0);
+        InitializeWorm(grid, state);
+        InitializeFruit(grid, state);
+        state->currentDir = GetRandomDirection();
+        state->gameOver = false;
+    }
+    else {
+        // Update AI and check for collisions
+        UpdateAI(grid, state);
+        
+        Pos newHead = CalculateNewHead(state);
+        if (CheckGameOver(grid, newHead)) {
+            state->gameOver = true;
         }
         else {
-            // Update AI and check for collisions
-            UpdateAI(grid, state);
+            // Check if the worm is about to eat fruit
+            bool willGrow = GridIsFruit(grid, newHead);
+            UpdateWormPosition(grid, state, newHead, willGrow);
             
-            Pos newHead = CalculateNewHead(state);
-            if (CheckGameOver(grid, newHead)) {
-                state->gameOver = true;
-            }
-            else {
-                // Check if the worm is about to eat fruit
-                bool willGrow = GridIsFruit(grid, newHead);
-                UpdateWormPosition(grid, state, newHead, willGrow);
-                
-                if (willGrow) {
-                    HandleFruitCollision(grid, state);
-                }
+            if (willGrow) {
+                HandleFruitCollision(grid, state);
             }
         }
-        state->moveTimer = 0.0f;  // Reset movement timer
     }
 }
 
-void SnakeDestroy(void *data) {
+static void SnakeDestroy(void *data) {
     GameState *state = (GameState *)data;
     if (state->worm.body) {
         free(state->worm.body);

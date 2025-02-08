@@ -268,12 +268,19 @@ int main(int argc, char *argv[]) {
     Design *design = designs[0];
 
     printf("Starting design: %s\n", design->name);
-    void *data= design->Create(grid, argc, argv);
+    void *data = design->Create(grid, argc, argv);
+
+    float timer = 0;
 
     // Main game loop
     while (!WindowShouldClose()) {
         // Update game state
-        design->UpdateFrame(grid, data);
+        timer += GetFrameTime();
+
+        if (timer >= grid->conf.moveInterval) {
+            timer = 0;
+            design->UpdateFrame(grid, data);
+        }
         
         // Draw game state
         BeginDrawing();
