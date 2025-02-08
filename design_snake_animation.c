@@ -18,26 +18,26 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
 // Initialize the worm at the center of the grid
 void InitializeWorm(Grid *grid, GameState *state) {
-    state->worm.max_length = MAX_WORM_LENGTH;
+    state->worm.max_length = state->conf.maxWormLength;
     state->worm.body = (Segment *)malloc(state->worm.max_length * sizeof(Segment));
     if (!state->worm.body) {
         fprintf(stderr, "Failed to allocate memory for worm body\n");
         exit(EXIT_FAILURE);
     }
-    state->worm.length = WORM_LENGTH;
+    state->worm.length = state->conf.wormLength;
     // Start worm in the middle of the grid
     int startRow = grid->rows / 2;
     int startCol = grid->cols / 2;
     
     // Initialize worm segments from head to tail
-    for (int i = 0; i < WORM_LENGTH; i++) {
+    for (int i = 0; i < state->conf.wormLength; i++) {
         state->worm.body[i].position = (Vector2){startCol - i, startRow};
-        state->worm.body[i].color = WORM_COLOR;
+        state->worm.body[i].color = state->conf.wormColor;
         
         // Mark positions in grid
         int col = startCol - i;
         int row = startRow;
-        grid->grid[row][col].color = WORM_COLOR;
+        grid->grid[row][col].color = state->conf.wormColor;
         grid->grid[row][col].isWorm = true;
     }
 }
@@ -90,7 +90,7 @@ void UpdateWormPosition(Grid *grid, GameState *state, Vector2 newHead, bool grow
     } else {
         // Clear the old tail position only if not growing
         Vector2 oldTail = state->worm.body[state->worm.length - 1].position;
-        grid->grid[(int)oldTail.y][(int)oldTail.x].color = BACKGROUND_COLOR;
+        grid->grid[(int)oldTail.y][(int)oldTail.x].color = state->conf.backgroundColor;
         grid->grid[(int)oldTail.y][(int)oldTail.x].isWorm = false;
     }
     
@@ -103,7 +103,7 @@ void UpdateWormPosition(Grid *grid, GameState *state, Vector2 newHead, bool grow
     // Update grid with new positions
     for (int i = 0; i < state->worm.length; i++) {
         Vector2 pos = state->worm.body[i].position;
-        grid->grid[(int)pos.y][(int)pos.x].color = WORM_COLOR;
+        grid->grid[(int)pos.y][(int)pos.x].color = state->conf.wormColor;
         grid->grid[(int)pos.y][(int)pos.x].isWorm = true;
     }
 }
@@ -162,7 +162,7 @@ void UpdateAI(Grid *grid, GameState *state) {
 // Handle fruit collision and create new fruit
 void HandleFruitCollision(Grid *grid, GameState *state) {
     // Increase worm length if possible
-    if (state->worm.length < MAX_WORM_LENGTH) {
+    if (state->worm.length < state->conf.maxWormLength) {
         // Add new segment at the end
         state->worm.body[state->worm.length] = state->worm.body[state->worm.length - 1];
         state->worm.length++;
@@ -219,10 +219,10 @@ void DesignInit(Grid *grid, GameState *state) {
 void DesignUpdateFrame(Grid *grid, GameState *state) {
      // Update game state
     state->moveTimer += GetFrameTime();
-    if (state->moveTimer >= MOVE_INTERVAL) {
+    if (state->moveTimer >= state->conf.moveInterval) {
         if (state->gameOver) {
             // Reset game state if game over
-            GridFillColor(grid, BACKGROUND_COLOR);
+            GridFillColor(grid, state->conf.backgroundColor);
             InitializeWorm(grid, state);
             InitializeFruit(grid, state);
             state->currentDir = GetRandomDirection();

@@ -35,12 +35,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 int WINDOW_WIDTH = DEFAULT_WINDOW_WIDTH;
 int WINDOW_HEIGHT = DEFAULT_WINDOW_HEIGHT;
 int BORDER_SIZE = DEFAULT_BORDER_SIZE;  // Configurable border size
-int WORM_LENGTH = DEFAULT_WORM_LENGTH;
 int FRAME_RATE = DEFAULT_FRAME_RATE;
-int MAX_WORM_LENGTH = DEFAULT_MAX_WORM_LENGTH;
-float MOVE_INTERVAL = DEFAULT_MOVE_INTERVAL;
-Color BACKGROUND_COLOR = DEFAULT_BACKGROUND_COLOR;
-Color WORM_COLOR = DEFAULT_WORM_COLOR;
 Color BORDER_COLOR = DEFAULT_BORDER_COLOR;
 
 int cellWidth;
@@ -161,7 +156,7 @@ void PrintHelp() {
     printf("  -h               Show this help message\n");
 }
 
-void ParseCommandLine(int argc, char *argv[], Grid *grid) {
+void ParseCommandLine(int argc, char *argv[], Grid *grid, GameState *state) {
     int opt;
     while ((opt = getopt(argc, argv, "r:c:w:H:l:f:i:b:m:B:W:O:h")) != -1) {
         switch (opt) {
@@ -182,16 +177,16 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid) {
                 if (WINDOW_HEIGHT < 100) WINDOW_HEIGHT = 100;
                 break;
             case 'l':
-                WORM_LENGTH = atoi(optarg);
-                if (WORM_LENGTH < 1) WORM_LENGTH = 1;
+                state->conf.wormLength = atoi(optarg);
+                if (state->conf.wormLength < 1) state->conf.wormLength = 1;
                 break;
             case 'f':
                 FRAME_RATE = atoi(optarg);
                 if (FRAME_RATE < 1) FRAME_RATE = 1;
                 break;
             case 'i':
-                MOVE_INTERVAL = atof(optarg);
-                if (MOVE_INTERVAL < 0.1f) {
+                state->conf.moveInterval = atof(optarg);
+                if (state->conf.moveInterval < 0.1f) {
                     fprintf(stderr, "Move interval must be at least 0.1 seconds\n");
                     exit(EXIT_FAILURE);
                 }
@@ -201,11 +196,7 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid) {
                 if (BORDER_SIZE < 0) BORDER_SIZE = 0;
                 break;
             case 'm':
-                MAX_WORM_LENGTH = atoi(optarg);
-                if (MAX_WORM_LENGTH < WORM_LENGTH) {
-                    fprintf(stderr, "Maximum worm length cannot be less than initial length (%d)\n", WORM_LENGTH);
-                    exit(EXIT_FAILURE);
-                }
+                state->conf.maxWormLength = atoi(optarg);
                 break;
             case 'B':  // Background color
             case 'W':  // Worm color
@@ -218,8 +209,8 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid) {
                     }
                     Color newColor = {r, g, b, 255};
                     switch (opt) {
-                        case 'B': BACKGROUND_COLOR = newColor; break;
-                        case 'W': WORM_COLOR = newColor; break;
+                        case 'B': state->conf.backgroundColor = newColor; break;
+                        case 'W': state->conf.wormColor = newColor; break;
                         case 'O': BORDER_COLOR = newColor; break;
                     }
                 } else {
@@ -236,9 +227,15 @@ void ParseCommandLine(int argc, char *argv[], Grid *grid) {
     }
 }
 
-void SetDefaults(Grid *grid) {
+void SetDefaults(Grid *grid, GameState *state) {
     grid->rows = DEFAULT_ROWS;
     grid->cols = DEFAULT_COLS;
+
+    state->conf.wormLength = DEFAULT_WORM_LENGTH;
+    state->conf.maxWormLength = DEFAULT_MAX_WORM_LENGTH;
+    state->conf.moveInterval = DEFAULT_MOVE_INTERVAL;
+    state->conf.backgroundColor = DEFAULT_BACKGROUND_COLOR;
+    state->conf.wormColor = DEFAULT_WORM_COLOR;
 }
 
 // Main game loop
@@ -246,9 +243,9 @@ int main(int argc, char *argv[]) {
     Grid *grid = &theGrid;
     GameState *state = &theState;
 
-    SetDefaults(grid);
-    ParseCommandLine(argc, argv, grid);
-    
+    SetDefaults(grid, state);
+    ParseCommandLine(argc, argv, grid, state);
+
     // Initialize window and set frame rate
     InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Snake Animation");
     SetTargetFPS(FRAME_RATE);
@@ -258,7 +255,7 @@ int main(int argc, char *argv[]) {
     cellHeight = WINDOW_HEIGHT / grid->rows;
 
     InitializeGridMemory(grid);
-    GridFillColor(grid, BACKGROUND_COLOR);
+    GridFillColor(grid, state->conf.backgroundColor);
 
     DesignInit(grid, state);
 
@@ -269,7 +266,7 @@ int main(int argc, char *argv[]) {
         
         // Draw game state
         BeginDrawing();
-            ClearBackground(BACKGROUND_COLOR);
+            ClearBackground(state->conf.backgroundColor);
             DrawPixelGrid(grid);
         EndDrawing();
     }
