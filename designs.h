@@ -20,8 +20,10 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
 extern Design snakeDesign;
 extern Design randomPixelsDesign;
+extern Design textDesign;
 
 Design *designs[] = {
     &snakeDesign,
     &randomPixelsDesign,
+    &textDesign,
 };

@@ -256,6 +256,7 @@ Config ParseCommandLine(int argc, char *argv[]) {
         }
     }
 
+    optind = 1;
     return conf;
 }
 
