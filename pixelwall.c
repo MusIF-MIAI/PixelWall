@@ -14,7 +14,8 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 0. You just DO WHAT THE FUCK YOU WANT TO.
 */
 
-#include "design.h"
+#include "pixelwall.h"
+#include "designs.h"
 
 Config defaultConf = {
     .rows = 16,
@@ -176,7 +177,12 @@ void PrintHelp() {
     printf("  -h               Show this help message\n");
 
     printf("\n");
-    DesignPrintHelp();
+
+    for (int i = 0; i < sizeof(designs) / sizeof(Design *); i++) {
+        printf("Design: %s\n", designs[i]->name);
+        designs[i]->PrintHelp();
+        printf("\n");
+    }
 }
 
 Color ParseColor(const char *string) {
@@ -259,12 +265,15 @@ int main(int argc, char *argv[]) {
     GridFillColor(grid, grid->conf.backgroundColor);
     GridFillData(grid, 0);
 
-    void *state = DesignCreate(grid, argc, argv);
+    Design *design = designs[0];
+
+    printf("Starting design: %s\n", design->name);
+    void *data= design->Create(grid, argc, argv);
 
     // Main game loop
     while (!WindowShouldClose()) {
         // Update game state
-        DesignUpdateFrame(grid, state);
+        design->UpdateFrame(grid, data);
         
         // Draw game state
         BeginDrawing();
@@ -273,7 +282,7 @@ int main(int argc, char *argv[]) {
         EndDrawing();
     }
 
-    DesignDestroy(state);
+    design->Destroy(data);
     GridCleanup(grid);
     CloseWindow();
     return 0;

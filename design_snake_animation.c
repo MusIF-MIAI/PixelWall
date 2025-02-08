@@ -14,7 +14,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 0. You just DO WHAT THE FUCK YOU WANT TO.
 */
 
-#include "design.h"
+#include "pixelwall.h"
 
 typedef struct {
     int wormLength;
@@ -58,26 +58,26 @@ typedef struct {
 #define CELL_WORM  (1 << 0)
 #define CELL_FRUIT (1 << 1)
 
-bool GridIsWorm(const Grid *grid, Pos pos) {
+static bool GridIsWorm(const Grid *grid, Pos pos) {
     return !!(GridGetData(grid, pos) & CELL_WORM);
 }
 
-bool GridIsFruit(const Grid *grid, Pos pos) {
+static bool GridIsFruit(const Grid *grid, Pos pos) {
     return !!(GridGetData(grid, pos) & CELL_FRUIT);
 }
 
-void GridSetWorm(Grid *grid, Pos pos, bool bit) {
+static void GridSetWorm(Grid *grid, Pos pos, bool bit) {
     uintptr_t data = GridGetData(grid, pos);
     GridSetData(grid, pos, (data & ~CELL_WORM) | (bit ? CELL_WORM : 0));
 }
 
-void GridSetFruit(Grid *grid, Pos pos, bool bit) {
+static void GridSetFruit(Grid *grid, Pos pos, bool bit) {
     uintptr_t data = GridGetData(grid, pos);
     GridSetData(grid, pos, (data & ~CELL_FRUIT) | (bit ? CELL_FRUIT : 0));
 }
 
 // Initialize the worm at the center of the grid
-void InitializeWorm(Grid *grid, GameState *state) {
+static void InitializeWorm(Grid *grid, GameState *state) {
     state->worm.max_length = state->conf.maxWormLength;
     state->worm.body = (Segment *)malloc(state->worm.max_length * sizeof(Segment));
     if (!state->worm.body) {
@@ -102,7 +102,7 @@ void InitializeWorm(Grid *grid, GameState *state) {
     }
 }
 
-void InitializeFruit(Grid *grid, GameState *state) {
+static void InitializeFruit(Grid *grid, GameState *state) {
     // Place fruit in random position (not on worm)
     Pos pos;
     do {
@@ -118,32 +118,32 @@ void InitializeFruit(Grid *grid, GameState *state) {
     GridSetFruit(grid, pos, true);
 }
 
-bool IsPositionValid(const Grid *grid, Pos pos) {
+static bool IsPositionValid(const Grid *grid, Pos pos) {
     return pos.x >= 0 && pos.x < grid->cols &&
            pos.y >= 0 && pos.y < grid->rows &&
            !GridIsWorm(grid, pos);
 }
 
-Pos CalculateNewHead(const GameState *state) {
+static Pos CalculateNewHead(const GameState *state) {
     Pos head = state->worm.body[0].position;
     return (Pos){head.x + state->currentDir.x, 
                  head.y + state->currentDir.y};
 }
 
 // Helper function to check if a move is safe
-bool IsSafeMove(const Grid *grid, Pos pos) {
+static bool IsSafeMove(const Grid *grid, Pos pos) {
     return pos.x >= 0 && pos.x < grid->cols &&
            pos.y >= 0 && pos.y < grid->rows &&
            !GridIsWorm(grid, pos);
 }
 
 // Check if new head position is invalid
-bool CheckGameOver(const Grid *grid, Pos newHead) {
+static bool CheckGameOver(const Grid *grid, Pos newHead) {
     return !IsPositionValid(grid, newHead);
 }
 
 // Update worm position and handle growth
-void UpdateWormPosition(Grid *grid, GameState *state, Pos newHead, bool growing) {
+static void UpdateWormPosition(Grid *grid, GameState *state, Pos newHead, bool growing) {
     // If growing, increment length before updating positions
     if (growing) {
         state->worm.length++;
@@ -169,7 +169,7 @@ void UpdateWormPosition(Grid *grid, GameState *state, Pos newHead, bool growing)
 }
 
 // Simplified UpdateAI function
-void UpdateAI(Grid *grid, GameState *state) {
+static void UpdateAI(Grid *grid, GameState *state) {
     Pos head = state->worm.body[0].position;
     Pos fruitPos = state->fruit.position;
     
@@ -219,7 +219,7 @@ void UpdateAI(Grid *grid, GameState *state) {
 }
 
 // Handle fruit collision and create new fruit
-void HandleFruitCollision(Grid *grid, GameState *state) {
+static void HandleFruitCollision(Grid *grid, GameState *state) {
     // Increase worm length if possible
     if (state->worm.length < state->conf.maxWormLength) {
         // Add new segment at the end
@@ -235,7 +235,7 @@ void HandleFruitCollision(Grid *grid, GameState *state) {
     InitializeFruit(grid, state);
 }
 
-void GrowWorm(Worm *worm) {
+static void GrowWorm(Worm *worm) {
     if (worm->length >= worm->max_length) {
         // Handle maximum length reached
         return;
@@ -244,7 +244,7 @@ void GrowWorm(Worm *worm) {
     worm->length++;
 }
 
-void ResizeWorm(Worm *worm, int new_max_length) {
+static void ResizeWorm(Worm *worm, int new_max_length) {
     Segment *new_body = (Segment *)realloc(worm->body, new_max_length * sizeof(Segment));
     if (!new_body) {
         fprintf(stderr, "Failed to resize worm body\n");
@@ -257,16 +257,7 @@ void ResizeWorm(Worm *worm, int new_max_length) {
     }
 }
 
-void DesignDestroy(void *data) {
-    GameState *state = (GameState *)data;
-    if (state->worm.body) {
-        free(state->worm.body);
-        state->worm.body = NULL;
-    }
-    free(state);
-}
-
-void ParseSnakeOptions(SnakeConf *conf, int argc, char *argv[]) {
+static void ParseSnakeOptions(SnakeConf *conf, int argc, char *argv[]) {
     int opt;
 
     while ((opt = getopt(argc, argv, ":l:m:W:")) != -1) {
@@ -285,14 +276,14 @@ void ParseSnakeOptions(SnakeConf *conf, int argc, char *argv[]) {
     }
 }
 
-void DesignPrintHelp() {
+void SnakePrintHelp() {
     printf("  -W <color>       Set worm color (R,G,B, default: %d,%d,%d)\n",
            defaultSnakeConf.wormColor.r, defaultSnakeConf.wormColor.g, defaultSnakeConf.wormColor.b);
     printf("  -l <length>      Set initial worm length (default: %d)\n", defaultSnakeConf.wormLength);
     printf("  -m <length>      Set maximum worm length (default: %d)\n", defaultSnakeConf.maxWormLength);
 }
 
-void *DesignCreate(Grid *grid, int argc, char *argv[]) {
+void *SnakeCreate(Grid *grid, int argc, char *argv[]) {
     GameState *state = (GameState *)malloc(sizeof(GameState));
     if (!state) return NULL;
 
@@ -309,7 +300,7 @@ void *DesignCreate(Grid *grid, int argc, char *argv[]) {
     return state;
 }
 
-void DesignUpdateFrame(Grid *grid, void *data) {
+void SnakeUpdateFrame(Grid *grid, void *data) {
     // Update game state
     GameState *state = (GameState *)data;
     state->moveTimer += GetFrameTime();
@@ -345,3 +336,20 @@ void DesignUpdateFrame(Grid *grid, void *data) {
         state->moveTimer = 0.0f;  // Reset movement timer
     }
 }
+
+void SnakeDestroy(void *data) {
+    GameState *state = (GameState *)data;
+    if (state->worm.body) {
+        free(state->worm.body);
+        state->worm.body = NULL;
+    }
+    free(state);
+}
+
+Design snakeDesign = {
+    .name = "snake",
+    .PrintHelp = SnakePrintHelp,
+    .Create = SnakeCreate,
+    .UpdateFrame = SnakeUpdateFrame,
+    .Destroy = SnakeDestroy,
+};

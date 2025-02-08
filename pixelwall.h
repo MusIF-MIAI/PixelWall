@@ -52,6 +52,14 @@ typedef struct {
     Pixel **pixels;
 } Grid;
 
+typedef struct {
+    const char *name;
+    void (*PrintHelp)();
+    void *(*Create)(Grid *grid, int argc, char *argv[]);
+    void (*UpdateFrame)(Grid *grid, void *data);
+    void (*Destroy)(void *data);
+} Design;
+
 void GridInitialize(Grid *grid, Config conf);
 void GridFillColor(Grid *grid, Color color);
 void GridFillData(Grid *grid, uintptr_t data);
@@ -61,11 +69,6 @@ void GridSetColor(Grid *grid, Pos pos, Color color);
 uintptr_t GridGetData(const Grid *grid, Pos pos);
 void GridSetData(Grid *grid, Pos pos, uintptr_t data);
 void GridCleanup(Grid *grid);
-
-void *DesignCreate(Grid *grid, int argc, char *argv[]);
-void DesignPrintHelp();
-void DesignUpdateFrame(Grid *grid, void *design);
-void DesignDestroy(void *design);
 
 Color GetRandomColor();
 Pos GetRandomDirection();
