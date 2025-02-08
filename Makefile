@@ -15,11 +15,12 @@ CFLAGS ?= -I$(RAYLIB_PATH)/include $(RAYLIB_LIBS)
 CXXFLAGS ?= $(CFLAGS) -std=c++11
 LDLIBS ?= $(RAYLIB_PATH)/libraylib.a
 
-ALL_PROGRAMS := random_pixels snake_animation text gigiproiettalo test_grid
+ALL_PROGRAMS := pixelwall random_pixels snake_animation text gigiproiettalo test_grid
 
 .PHONY: all
 all: $(ALL_PROGRAMS)
 
+pixelwall: pixelwall.c design_snake_animation.c
 random_pixels: random_pixels.c
 snake_animation: snake_animation.c
 text: text.c
