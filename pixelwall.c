@@ -32,8 +32,6 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 #define DEFAULT_BORDER_COLOR GRAY
 
 // Update configuration variables
-int ROWS = DEFAULT_ROWS;
-int COLS = DEFAULT_COLS;
 int WINDOW_WIDTH = DEFAULT_WINDOW_WIDTH;
 int WINDOW_HEIGHT = DEFAULT_WINDOW_HEIGHT;
 int BORDER_SIZE = DEFAULT_BORDER_SIZE;  // Configurable border size
@@ -45,29 +43,17 @@ Color BACKGROUND_COLOR = DEFAULT_BACKGROUND_COLOR;
 Color WORM_COLOR = DEFAULT_WORM_COLOR;
 Color BORDER_COLOR = DEFAULT_BORDER_COLOR;
 
-
-// Function prototypes
-void InitializeGrid(GameState *state);
-void InitializeWorm(GameState *state);
-void InitializeFruit(GameState *state);
-void DrawPixelGrid(const GameState *state);
-void InitializeGridMemory(GameState *state);
-void CleanupGridMemory(GameState *state);
-bool CheckGameOver(const GameState *state, Vector2 newHead);
-void ParseCommandLine(int argc, char *argv[]);
-void CleanupWorm(GameState *state);
-
 int cellWidth;
 int cellHeight;
 
 // Initialize the game grid with default values
-void InitializeGrid(GameState *state) {
+void InitializeGrid(Grid *grid) {
     // Loop through all rows and columns
-    for (int row = 0; row < ROWS; row++) {
-        for (int col = 0; col < COLS; col++) {
-            state->grid[row][col].color = BACKGROUND_COLOR;  // Set background color
-            state->grid[row][col].isWorm = false;            // No worm initially
-            state->grid[row][col].isFruit = false;           // No fruit initially
+    for (int row = 0; row < grid->rows; row++) {
+        for (int col = 0; col < grid->cols; col++) {
+            grid->grid[row][col].color = BACKGROUND_COLOR;  // Set background color
+            grid->grid[row][col].isWorm = false;            // No worm initially
+            grid->grid[row][col].isFruit = false;           // No fruit initially
         }
     }
 }
@@ -93,97 +79,63 @@ Vector2 GetRandomDirection() {
     return dirs[GetRandomValue(0, 3)];
 }
 
-// Main game loop
-int main(int argc, char *argv[]) {  // Change main signature to standard form
-    ParseCommandLine(argc, argv);   // Use standard argc/argv instead of __argc/__argv
-    // Initialize window and set frame rate
-    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Snake Animation");
-    SetTargetFPS(FRAME_RATE);
+Grid theGrid;
+GameState theState;
 
-    // Calculate cell dimensions based on window size
-    cellWidth = WINDOW_WIDTH / COLS;
-    cellHeight = WINDOW_HEIGHT / ROWS;
-
-    // Initialize game state
-    GameState state;
-    
-    InitializeGridMemory(&state);
-    InitializeGrid(&state);
-
-    DesignInit(&state);
-
-    // Main game loop
-    while (!WindowShouldClose()) {
-        // Update game state
-        DesignUpdateFrame(&state);
-        
-        // Draw game state
-        BeginDrawing();
-            ClearBackground(BACKGROUND_COLOR);
-            DrawPixelGrid(&state);
-        EndDrawing();
-    }
-
-    CleanupWorm(&state);
-    // Cleanup resources
-    CleanupGridMemory(&state);
-    CloseWindow();
-    return 0;
-}
-
-void DrawPixelGrid(const GameState *state) {
+void DrawPixelGrid(const Grid *grid) {
     // Calculate cell dimensions excluding borders
     int cellWidthNoBorder = cellWidth - BORDER_SIZE;
     int cellHeightNoBorder = cellHeight - BORDER_SIZE;
     
     // Draw grid cells with borders
-    for (int row = 0; row < ROWS; row++) {
-        for (int col = 0; col < COLS; col++) {
+    for (int row = 0; row < grid->rows; row++) {
+        for (int col = 0; col < grid->cols; col++) {
             // Calculate cell position with border spacing
             int x = col * cellWidth + BORDER_SIZE;
             int y = row * cellHeight + BORDER_SIZE;
             
             // Draw cell content
-            Color cellColor = state->grid[row][col].color;
+            Color cellColor = grid->grid[row][col].color;
             DrawRectangle(x, y, cellWidthNoBorder, cellHeightNoBorder, cellColor);
         }
     }
     
     // Draw grid borders between cells
-    for (int i = 0; i <= COLS; i++) {
+    for (int i = 0; i <= grid->cols; i++) {
         int x = i * cellWidth;
         DrawRectangle(x, 0, BORDER_SIZE, WINDOW_HEIGHT, BORDER_COLOR);
     }
-    for (int i = 0; i <= ROWS; i++) {
+
+    for (int i = 0; i <= grid->rows; i++) {
         int y = i * cellHeight;
         DrawRectangle(0, y, WINDOW_WIDTH, BORDER_SIZE, BORDER_COLOR);
     }
 }
 
-void InitializeGridMemory(GameState *state) {
+void InitializeGridMemory(Grid *grid) {
     // Allocate memory for rows
-    state->grid = (Pixel **)malloc(ROWS * sizeof(Pixel *));
-    if (!state->grid) {
+    grid->grid = (Pixel **)malloc(grid->rows * sizeof(Pixel *));
+    if (!grid->grid) {
         fprintf(stderr, "Memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
 
     // Allocate memory for columns
-    for (int i = 0; i < ROWS; i++) {
-        state->grid[i] = (Pixel *)malloc(COLS * sizeof(Pixel));
-        if (!state->grid[i]) {
+    for (int i = 0; i < grid->rows; i++) {
+        grid->grid[i] = (Pixel *)malloc(grid->cols * sizeof(Pixel));
+        if (!grid->grid[i]) {
             fprintf(stderr, "Memory allocation failed\n");
             exit(EXIT_FAILURE);
         }
     }
 }
 
-void CleanupGridMemory(GameState *state) {
-    if (state->grid) {
-        for (int i = 0; i < ROWS; i++) {
-            free(state->grid[i]);
+void CleanupGridMemory(Grid *grid) {
+    if (grid->grid) {
+        for (int i = 0; i < grid->rows; i++) {
+            free(grid->grid[i]);
         }
-        free(state->grid);
+        free(grid->grid);
     }
 }
 
@@ -209,17 +161,17 @@ void PrintHelp() {
     printf("  -h               Show this help message\n");
 }
 
-void ParseCommandLine(int argc, char *argv[]) {
+void ParseCommandLine(int argc, char *argv[], Grid *grid) {
     int opt;
     while ((opt = getopt(argc, argv, "r:c:w:H:l:f:i:b:m:B:W:O:h")) != -1) {
         switch (opt) {
             case 'r':
-                ROWS = atoi(optarg);
-                if (ROWS < 5) ROWS = 5;
+                grid->rows = atoi(optarg);
+                if (grid->rows < 5) grid->rows = 5;
                 break;
             case 'c':
-                COLS = atoi(optarg);
-                if (COLS < 5) COLS = 5;
+                grid->cols = atoi(optarg);
+                if (grid->cols < 5) grid->cols = 5;
                 break;
             case 'w':
                 WINDOW_WIDTH = atoi(optarg);
@@ -284,3 +236,46 @@ void ParseCommandLine(int argc, char *argv[]) {
     }
 }
 
+void SetDefaults(Grid *grid) {
+    grid->rows = DEFAULT_ROWS;
+    grid->cols = DEFAULT_COLS;
+}
+
+// Main game loop
+int main(int argc, char *argv[]) {
+    Grid *grid = &theGrid;
+    GameState *state = &theState;
+
+    SetDefaults(grid);
+    ParseCommandLine(argc, argv, grid);
+    
+    // Initialize window and set frame rate
+    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Snake Animation");
+    SetTargetFPS(FRAME_RATE);
+
+    // Calculate cell dimensions based on window size
+    cellWidth = WINDOW_WIDTH / grid->cols;
+    cellHeight = WINDOW_HEIGHT / grid->rows;
+
+    InitializeGridMemory(grid);
+    InitializeGrid(grid);
+
+    DesignInit(grid, state);
+
+    // Main game loop
+    while (!WindowShouldClose()) {
+        // Update game state
+        DesignUpdateFrame(grid, state);
+        
+        // Draw game state
+        BeginDrawing();
+            ClearBackground(BACKGROUND_COLOR);
+            DrawPixelGrid(grid);
+        EndDrawing();
+    }
+
+    DesignCleanup(state);
+    CleanupGridMemory(grid);
+    CloseWindow();
+    return 0;
+}

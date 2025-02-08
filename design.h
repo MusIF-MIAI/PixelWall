@@ -50,7 +50,6 @@ typedef struct {
 
 // Main game state structure
 typedef struct {
-    Pixel **grid;        // 2D array representing the game grid
     Worm worm;           // The snake/worm object
     Fruit fruit;         // The fruit object
     float moveTimer;     // Timer for movement updates
@@ -59,22 +58,22 @@ typedef struct {
 } GameState;
 
 // Update configuration variables
-extern int ROWS;
-extern int COLS;
-extern int WINDOW_WIDTH;
-extern int WINDOW_HEIGHT;
-extern int BORDER_SIZE;
 extern int WORM_LENGTH;
-extern int FRAME_RATE;
 extern int MAX_WORM_LENGTH;
 extern float MOVE_INTERVAL;
 extern Color BACKGROUND_COLOR;
 extern Color WORM_COLOR;
-extern Color BORDER_COLOR;
 
-void DesignInit(GameState *state);
-void DesignUpdateFrame(GameState *state);
+typedef struct {
+    int rows;
+    int cols;
+    Pixel **grid;
+} Grid;
 
-void InitializeGrid(GameState *state);
+void DesignInit(Grid *grid, GameState *state);
+void DesignUpdateFrame(Grid *grid, GameState *state);
+void DesignCleanup(GameState *state);
+
+void InitializeGrid(Grid *grid);
 Color GetRandomColor();
 Vector2 GetRandomDirection();
