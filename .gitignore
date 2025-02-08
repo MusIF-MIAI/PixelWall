@@ -1,6 +1,9 @@
-random_pixels
-snake_animation
-text
+pixelwall/pixelwall
+others/test_grid
+
+.cache/
+.vscode/
+compile_commands.json
 
 # Prerequisites
 *.d
