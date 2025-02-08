@@ -17,29 +17,18 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 #include "design.h"
 
 Config defaultConf = {
+    .rows = 16,
+    .cols = 22,
+    .windowWidth = 1280,
+    .windowHeight = 720,
+    .frameRate = 10,
+    .borderSize = 2,
+    .borderColor = GRAY,
     .moveInterval = 0.2f,
     .backgroundColor = BLACK,
 };
 
-// Configuration
-#define DEFAULT_ROWS 16
-#define DEFAULT_COLS 22
-#define DEFAULT_WINDOW_WIDTH 1280
-#define DEFAULT_WINDOW_HEIGHT 720
 #define MAX_COLOR_VALUE 255
-#define DEFAULT_FRAME_RATE 10
-#define DEFAULT_BORDER_SIZE 2  // Default border size in pixels
-#define DEFAULT_BORDER_COLOR GRAY
-
-// Update configuration variables
-int WINDOW_WIDTH = DEFAULT_WINDOW_WIDTH;
-int WINDOW_HEIGHT = DEFAULT_WINDOW_HEIGHT;
-int BORDER_SIZE = DEFAULT_BORDER_SIZE;  // Configurable border size
-int FRAME_RATE = DEFAULT_FRAME_RATE;
-Color BORDER_COLOR = DEFAULT_BORDER_COLOR;
-
-int cellWidth;
-int cellHeight;
 
 // Initialize the game grid with default values
 void GridFillColor(Grid *grid, Color color) {
@@ -85,38 +74,43 @@ Grid theGrid;
 
 void DrawPixelGrid(const Grid *grid) {
     // Calculate cell dimensions excluding borders
-    int cellWidthNoBorder = cellWidth - BORDER_SIZE;
-    int cellHeightNoBorder = cellHeight - BORDER_SIZE;
+    int cellWidth = grid->conf.windowWidth / grid->cols;
+    int cellHeight = grid->conf.windowHeight / grid->rows;
+
+    int cellWidthNoBorder = cellWidth - grid->conf.borderSize;
+    int cellHeightNoBorder = cellHeight - grid->conf.borderSize;
     
     // Draw grid cells with borders
     for (int row = 0; row < grid->rows; row++) {
         for (int col = 0; col < grid->cols; col++) {
             // Calculate cell position with border spacing
             Pos pos = { col, row };
-            int x = pos.x * cellWidth + BORDER_SIZE;
-            int y = pos.y * cellHeight + BORDER_SIZE;
+            int x = pos.x * cellWidth + grid->conf.borderSize;
+            int y = pos.y * cellHeight + grid->conf.borderSize;
 
             // Draw cell content
             Color cellColor = GridGetColor(grid, pos);
             DrawRectangle(x, y, cellWidthNoBorder, cellHeightNoBorder, cellColor);
+            DrawText(TextFormat("%d", GridGetData(grid, pos)), x + 5, y + 5, 18, WHITE);
         }
     }
     
     // Draw grid borders between cells
     for (int i = 0; i <= grid->cols; i++) {
         int x = i * cellWidth;
-        DrawRectangle(x, 0, BORDER_SIZE, WINDOW_HEIGHT, BORDER_COLOR);
+        DrawRectangle(x, 0, grid->conf.borderSize, grid->conf.windowHeight, grid->conf.borderColor);
     }
 
     for (int i = 0; i <= grid->rows; i++) {
         int y = i * cellHeight;
-        DrawRectangle(0, y, WINDOW_WIDTH, BORDER_SIZE, BORDER_COLOR);
+        DrawRectangle(0, y, grid->conf.windowWidth, grid->conf.borderSize, grid->conf.borderColor);
     }
 }
 
-void GridInitialize(Grid *grid, int rows, int cols) {
-    grid->rows = rows;
-    grid->cols = cols;
+void GridInitialize(Grid *grid, Config conf) {
+    grid->conf = conf;
+    grid->rows = conf.rows;
+    grid->cols = conf.cols;
 
     // Allocate memory for rows
     grid->pixels = (Pixel **)malloc(grid->rows * sizeof(Pixel *));
@@ -171,14 +165,14 @@ void PrintHelp() {
     printf("  -B <color>       Set background color (R,G,B, default: %d,%d,%d)\n",
            defaultConf.backgroundColor.r, defaultConf.backgroundColor.g, defaultConf.backgroundColor.b);
     printf("  -O <color>       Set border color (R,G,B, default: %d,%d,%d)\n",
-           DEFAULT_BORDER_COLOR.r, DEFAULT_BORDER_COLOR.g, DEFAULT_BORDER_COLOR.b);
-    printf("  -r <rows>        Set number of rows (default: %d)\n", DEFAULT_ROWS);
-    printf("  -c <cols>        Set number of columns (default: %d)\n", DEFAULT_COLS);
-    printf("  -w <width>       Set window width (default: %d)\n", DEFAULT_WINDOW_WIDTH);
-    printf("  -H <height>      Set window height (default: %d)\n", DEFAULT_WINDOW_HEIGHT);
-    printf("  -f <rate>        Set frame rate (default: %d)\n", DEFAULT_FRAME_RATE);
+           defaultConf.borderColor.r, defaultConf.borderColor.g, defaultConf.borderColor.b);
+    printf("  -r <rows>        Set number of rows (default: %d)\n", defaultConf.rows);
+    printf("  -c <cols>        Set number of columns (default: %d)\n", defaultConf.cols);
+    printf("  -w <width>       Set window width (default: %d)\n", defaultConf.windowWidth);
+    printf("  -H <height>      Set window height (default: %d)\n", defaultConf.windowHeight);
+    printf("  -f <rate>        Set frame rate (default: %d)\n", defaultConf.frameRate);
     printf("  -i <interval>    Set move interval in seconds (default: %.1f)\n", defaultConf.moveInterval);
-    printf("  -b <size>        Set border size (default: %d)\n", DEFAULT_BORDER_SIZE);
+    printf("  -b <size>        Set border size (default: %d)\n", defaultConf.borderSize);
     printf("  -h               Show this help message\n");
 
     printf("\n");
@@ -201,77 +195,67 @@ Color ParseColor(const char *string) {
     }
 }
 
-void ParseCommandLine(int argc, char *argv[], Grid *grid) {
+Config ParseCommandLine(int argc, char *argv[]) {
     int opt;
+    Config conf = defaultConf;
     while ((opt = getopt(argc, argv, ":r:c:w:H:f:b:B:O:h")) != -1) {
         switch (opt) {
             case 'r':
-                grid->rows = atoi(optarg);
-                if (grid->rows < 5) grid->rows = 5;
+                conf.rows = atoi(optarg);
+                if (conf.rows < 5) conf.rows = 5;
                 break;
             case 'c':
-                grid->cols = atoi(optarg);
-                if (grid->cols < 5) grid->cols = 5;
+                conf.cols = atoi(optarg);
+                if (conf.cols < 5) conf.cols = 5;
                 break;
             case 'w':
-                WINDOW_WIDTH = atoi(optarg);
-                if (WINDOW_WIDTH < 100) WINDOW_WIDTH = 100;
+                conf.windowWidth = atoi(optarg);
+                if (conf.windowWidth < 100) conf.windowWidth = 100;
                 break;
             case 'H':
-                WINDOW_HEIGHT = atoi(optarg);
-                if (WINDOW_HEIGHT < 100) WINDOW_HEIGHT = 100;
+                conf.windowHeight = atoi(optarg);
+                if (conf.windowHeight < 100) conf.windowHeight = 100;
                 break;
             case 'f':
-                FRAME_RATE = atoi(optarg);
-                if (FRAME_RATE < 1) FRAME_RATE = 1;
+                conf.frameRate = atoi(optarg);
+                if (conf.frameRate < 1) conf.frameRate = 1;
                 break;
             case 'i':
-                grid->conf.moveInterval = atof(optarg);
-                if (grid->conf.moveInterval < 0.1f) {
+                conf.moveInterval = atof(optarg);
+                if (conf.moveInterval < 0.1f) {
                     fprintf(stderr, "Move interval must be at least 0.1 seconds\n");
                     exit(EXIT_FAILURE);
                 }
                 break;
             case 'b':
-                BORDER_SIZE = atoi(optarg);
-                if (BORDER_SIZE < 0) BORDER_SIZE = 0;
+                conf.borderSize = atoi(optarg);
+                if (conf.borderSize < 0) conf.borderSize = 0;
                 break;
-            case 'B':  // Background color
-                grid->conf.backgroundColor = ParseColor(optarg);
+            case 'B':
+                conf.backgroundColor = ParseColor(optarg);
                 break;
-            case 'O': {  // Border color
-                BORDER_COLOR = ParseColor(optarg);
+            case 'O':
+                conf.borderColor = ParseColor(optarg);
                 break;
-            } 
             case 'h':
                 PrintHelp();
                 exit(EXIT_SUCCESS);
         }
     }
-}
 
-void SetDefaults(Grid *grid) {
-    grid->conf = defaultConf;
-    grid->rows = DEFAULT_ROWS;
-    grid->cols = DEFAULT_COLS;
+    return conf;
 }
 
 // Main game loop
 int main(int argc, char *argv[]) {
     Grid *grid = &theGrid;
-
-    SetDefaults(grid);
-    ParseCommandLine(argc, argv, grid);
+    Config conf = ParseCommandLine(argc, argv);
 
     // Initialize window and set frame rate
-    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Snake Animation");
-    SetTargetFPS(FRAME_RATE);
+    InitWindow(conf.windowWidth, conf.windowHeight, "Snake Animation");
+    SetTargetFPS(conf.frameRate);
 
-    // Calculate cell dimensions based on window size
-    cellWidth = WINDOW_WIDTH / grid->cols;
-    cellHeight = WINDOW_HEIGHT / grid->rows;
-
-    GridInitialize(grid, grid->rows, grid->cols);
+    GridInitialize(grid, conf);
     GridFillColor(grid, grid->conf.backgroundColor);
     GridFillData(grid, 0);
 

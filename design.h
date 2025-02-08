@@ -24,8 +24,15 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 #include "raylib.h"
 
 typedef struct {
+    int rows;
+    int cols;
+    int windowWidth;
+    int windowHeight;
+    int frameRate;
+    int borderSize;
     float moveInterval;
     Color backgroundColor;
+    Color borderColor;
 } Config;
 
 typedef struct {
@@ -45,7 +52,7 @@ typedef struct {
     Pixel **pixels;
 } Grid;
 
-void GridInitialize(Grid *grid, int rows, int cols);
+void GridInitialize(Grid *grid, Config conf);
 void GridFillColor(Grid *grid, Color color);
 void GridFillData(Grid *grid, uintptr_t data);
 
