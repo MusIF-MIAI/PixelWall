@@ -74,13 +74,19 @@ typedef struct {
 typedef struct {
   int rows;
   int cols;
-  Pixel **grid;
+  Pixel **pixels;
 } Grid;
+
+void GridInitialize(Grid *grid, int rows, int cols);
+void GridFillColor(Grid *grid, Color color);
+Color GridGetColor(const Grid *grid, Pos pos);
+void GridPutColor(Grid *grid, Pos pos, Color color);
+
+void GridCleanup(Grid *grid);
 
 void DesignInit(Grid *grid, GameState *state);
 void DesignUpdateFrame(Grid *grid, GameState *state);
 void DesignCleanup(GameState *state);
 
-void GridFillColor(Grid *grid, Color color);
 Color GetRandomColor();
 Pos GetRandomDirection();

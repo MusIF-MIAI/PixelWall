@@ -46,9 +46,10 @@ void GridFillColor(Grid *grid, Color color) {
     // Loop through all rows and columns
     for (int row = 0; row < grid->rows; row++) {
         for (int col = 0; col < grid->cols; col++) {
-            grid->grid[row][col].color = color;  // Set background color
-            grid->grid[row][col].isWorm = false;            // No worm initially
-            grid->grid[row][col].isFruit = false;           // No fruit initially
+            Pos pos = { col, row };
+            GridPutColor(grid, pos, color);
+            grid->pixels[row][col].isWorm = false; // No worm initially
+            grid->pixels[row][col].isFruit = false; // No fruit initially
         }
     }
 }
@@ -86,11 +87,12 @@ void DrawPixelGrid(const Grid *grid) {
     for (int row = 0; row < grid->rows; row++) {
         for (int col = 0; col < grid->cols; col++) {
             // Calculate cell position with border spacing
-            int x = col * cellWidth + BORDER_SIZE;
-            int y = row * cellHeight + BORDER_SIZE;
-            
+            Pos pos = { col, row };
+            int x = pos.x * cellWidth + BORDER_SIZE;
+            int y = pos.y * cellHeight + BORDER_SIZE;
+
             // Draw cell content
-            Color cellColor = grid->grid[row][col].color;
+            Color cellColor = GridGetColor(grid, pos);
             DrawRectangle(x, y, cellWidthNoBorder, cellHeightNoBorder, cellColor);
         }
     }
@@ -107,31 +109,46 @@ void DrawPixelGrid(const Grid *grid) {
     }
 }
 
-void InitializeGridMemory(Grid *grid) {
+void GridInitialize(Grid *grid, int rows, int cols) {
+    grid->rows = rows;
+    grid->cols = cols;
+
     // Allocate memory for rows
-    grid->grid = (Pixel **)malloc(grid->rows * sizeof(Pixel *));
-    if (!grid->grid) {
+    grid->pixels = (Pixel **)malloc(grid->rows * sizeof(Pixel *));
+    if (!grid->pixels) {
         fprintf(stderr, "Memory allocation failed\n");
         exit(EXIT_FAILURE);
     }
 
     // Allocate memory for columns
     for (int i = 0; i < grid->rows; i++) {
-        grid->grid[i] = (Pixel *)malloc(grid->cols * sizeof(Pixel));
-        if (!grid->grid[i]) {
+        grid->pixels[i] = (Pixel *)malloc(grid->cols * sizeof(Pixel));
+        if (!grid->pixels[i]) {
             fprintf(stderr, "Memory allocation failed\n");
             exit(EXIT_FAILURE);
         }
     }
 }
 
-void CleanupGridMemory(Grid *grid) {
-    if (grid->grid) {
+Color GridGetColor(const Grid *grid, Pos pos) {
+    return grid->pixels[pos.y][pos.x].color;
+}
+
+void GridPutColor(Grid *grid, Pos pos, Color color) {
+    grid->pixels[pos.y][pos.x].color = color;
+}
+
+void GridCleanup(Grid *grid) {
+    if (grid->pixels) {
         for (int i = 0; i < grid->rows; i++) {
-            free(grid->grid[i]);
+            free(grid->pixels[i]);
         }
-        free(grid->grid);
+        free(grid->pixels);
     }
+
+    grid->pixels = 0;
+    grid->rows = 0;
+    grid->cols = 0;
 }
 
 void PrintHelp() {
@@ -254,7 +271,7 @@ int main(int argc, char *argv[]) {
     cellWidth = WINDOW_WIDTH / grid->cols;
     cellHeight = WINDOW_HEIGHT / grid->rows;
 
-    InitializeGridMemory(grid);
+    GridInitialize(grid, grid->rows, grid->cols);
     GridFillColor(grid, state->conf.backgroundColor);
 
     DesignInit(grid, state);
@@ -272,7 +289,7 @@ int main(int argc, char *argv[]) {
     }
 
     DesignCleanup(state);
-    CleanupGridMemory(grid);
+    GridCleanup(grid);
     CloseWindow();
     return 0;
 }
