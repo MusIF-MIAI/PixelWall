@@ -71,6 +71,13 @@ Pos GetRandomDirection() {
     return dirs[GetRandomValue(0, 3)];
 }
 
+Pos GetRandomPositionIn(int rows, int cols) {
+    return (Pos) {
+        GetRandomValue(0, cols - 1),
+        GetRandomValue(0, rows - 1),
+    };
+}
+
 Grid theGrid;
 
 void DrawPixelGrid(const Grid *grid) {

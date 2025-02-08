@@ -20,7 +20,7 @@ ALL_PROGRAMS := pixelwall random_pixels snake_animation text gigiproiettalo test
 .PHONY: all
 all: $(ALL_PROGRAMS)
 
-pixelwall: pixelwall.c design_snake_animation.c
+pixelwall: pixelwall.c design_snake_animation.c design_random_pixels.c
 random_pixels: random_pixels.c
 snake_animation: snake_animation.c
 text: text.c

@@ -22,7 +22,7 @@ typedef struct {
     Color wormColor;
 } SnakeConf;
 
-SnakeConf defaultSnakeConf = {
+static SnakeConf defaultSnakeConf = {
     .wormLength = 5,
     .maxWormLength = 100,
     .wormColor = GREEN,
@@ -105,8 +105,7 @@ static void InitializeFruit(Grid *grid, GameState *state) {
     // Place fruit in random position (not on worm)
     Pos pos;
     do {
-        pos.x = GetRandomValue(0, grid->cols - 1);
-        pos.y = GetRandomValue(0, grid->rows - 1);
+        pos = GetRandomPositionIn(grid->rows, grid->cols);
     } while (GridIsWorm(grid, pos));
     
     state->fruit.position = pos;

@@ -72,4 +72,5 @@ void GridCleanup(Grid *grid);
 
 Color GetRandomColor();
 Pos GetRandomDirection();
+Pos GetRandomPositionIn(int rows, int cols);
 Color ParseColor(const char *string);
