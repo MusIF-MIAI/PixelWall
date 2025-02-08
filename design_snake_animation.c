@@ -222,7 +222,7 @@ void DesignUpdateFrame(Grid *grid, GameState *state) {
     if (state->moveTimer >= MOVE_INTERVAL) {
         if (state->gameOver) {
             // Reset game state if game over
-            InitializeGrid(grid);
+            GridFillColor(grid, BACKGROUND_COLOR);
             InitializeWorm(grid, state);
             InitializeFruit(grid, state);
             state->currentDir = GetRandomDirection();

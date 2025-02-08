@@ -74,6 +74,6 @@ void DesignInit(Grid *grid, GameState *state);
 void DesignUpdateFrame(Grid *grid, GameState *state);
 void DesignCleanup(GameState *state);
 
-void InitializeGrid(Grid *grid);
+void GridFillColor(Grid *grid, Color color);
 Color GetRandomColor();
 Vector2 GetRandomDirection();

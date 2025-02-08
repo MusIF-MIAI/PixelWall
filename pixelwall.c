@@ -47,11 +47,11 @@ int cellWidth;
 int cellHeight;
 
 // Initialize the game grid with default values
-void InitializeGrid(Grid *grid) {
+void GridFillColor(Grid *grid, Color color) {
     // Loop through all rows and columns
     for (int row = 0; row < grid->rows; row++) {
         for (int col = 0; col < grid->cols; col++) {
-            grid->grid[row][col].color = BACKGROUND_COLOR;  // Set background color
+            grid->grid[row][col].color = color;  // Set background color
             grid->grid[row][col].isWorm = false;            // No worm initially
             grid->grid[row][col].isFruit = false;           // No fruit initially
         }
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
     cellHeight = WINDOW_HEIGHT / grid->rows;
 
     InitializeGridMemory(grid);
-    InitializeGrid(grid);
+    GridFillColor(grid, BACKGROUND_COLOR);
 
     DesignInit(grid, state);
 
