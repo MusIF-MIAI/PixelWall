@@ -64,8 +64,8 @@ Color GetRandomColor() {
 }
 
 // Add movement functions
-Vector2 GetRandomDirection() {
-    Vector2 dirs[] = {
+Pos GetRandomDirection() {
+    Pos dirs[] = {
         {1, 0},   // Right
         {-1, 0},  // Left
         {0, 1},   // Down

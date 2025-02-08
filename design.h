@@ -31,13 +31,19 @@ typedef struct {
 } Pixel;
 
 // Game objects
+
 typedef struct {
-    Vector2 position;
+    int x;
+    int y;
+} Pos;
+
+typedef struct {
+    Pos position;
     Color color;
 } Segment;
 
 typedef struct {
-    Vector2 position;
+    Pos position;
     Color color;
 } Fruit;
 
@@ -61,7 +67,7 @@ typedef struct {
     Worm worm;          // The snake/worm object
     Fruit fruit;        // The fruit object
     float moveTimer;    // Timer for movement updates
-    Vector2 currentDir; // Current movement direction
+    Pos currentDir;     // Current movement direction
     bool gameOver;      // Game over flag
 } GameState;
 
@@ -77,4 +83,4 @@ void DesignCleanup(GameState *state);
 
 void GridFillColor(Grid *grid, Color color);
 Color GetRandomColor();
-Vector2 GetRandomDirection();
+Pos GetRandomDirection();

@@ -31,7 +31,7 @@ void InitializeWorm(Grid *grid, GameState *state) {
     
     // Initialize worm segments from head to tail
     for (int i = 0; i < state->conf.wormLength; i++) {
-        state->worm.body[i].position = (Vector2){startCol - i, startRow};
+        state->worm.body[i].position = (Pos){startCol - i, startRow};
         state->worm.body[i].color = state->conf.wormColor;
         
         // Mark positions in grid
@@ -50,7 +50,7 @@ void InitializeFruit(Grid *grid, GameState *state) {
         col = GetRandomValue(0, grid->cols - 1);
     } while (grid->grid[row][col].isWorm);
     
-    state->fruit.position = (Vector2){col, row};
+    state->fruit.position = (Pos){col, row};
     state->fruit.color = GetRandomColor();
     
     // Mark position in grid
@@ -58,40 +58,40 @@ void InitializeFruit(Grid *grid, GameState *state) {
     grid->grid[row][col].isFruit = true;
 }
 
-bool IsPositionValid(const Grid *grid, Vector2 pos) {
+bool IsPositionValid(const Grid *grid, Pos pos) {
     return pos.x >= 0 && pos.x < grid->cols &&
            pos.y >= 0 && pos.y < grid->rows &&
-           !grid->grid[(int)pos.y][(int)pos.x].isWorm;
+           !grid->grid[pos.y][pos.x].isWorm;
 }
 
-Vector2 CalculateNewHead(const GameState *state) {
-    Vector2 head = state->worm.body[0].position;
-    return (Vector2){head.x + state->currentDir.x, 
-                    head.y + state->currentDir.y};
+Pos CalculateNewHead(const GameState *state) {
+    Pos head = state->worm.body[0].position;
+    return (Pos){head.x + state->currentDir.x, 
+                 head.y + state->currentDir.y};
 }
 
 // Helper function to check if a move is safe
-bool IsSafeMove(const Grid *grid, Vector2 pos) {
+bool IsSafeMove(const Grid *grid, Pos pos) {
     return pos.x >= 0 && pos.x < grid->cols &&
            pos.y >= 0 && pos.y < grid->rows &&
-           !grid->grid[(int)pos.y][(int)pos.x].isWorm;
+           !grid->grid[pos.y][pos.x].isWorm;
 }
 
 // Check if new head position is invalid
-bool CheckGameOver(const Grid *grid, Vector2 newHead) {
+bool CheckGameOver(const Grid *grid, Pos newHead) {
     return !IsPositionValid(grid, newHead);
 }
 
 // Update worm position and handle growth
-void UpdateWormPosition(Grid *grid, GameState *state, Vector2 newHead, bool growing) {
+void UpdateWormPosition(Grid *grid, GameState *state, Pos newHead, bool growing) {
     // If growing, increment length before updating positions
     if (growing) {
         state->worm.length++;
     } else {
         // Clear the old tail position only if not growing
-        Vector2 oldTail = state->worm.body[state->worm.length - 1].position;
-        grid->grid[(int)oldTail.y][(int)oldTail.x].color = state->conf.backgroundColor;
-        grid->grid[(int)oldTail.y][(int)oldTail.x].isWorm = false;
+        Pos oldTail = state->worm.body[state->worm.length - 1].position;
+        grid->grid[oldTail.y][oldTail.x].color = state->conf.backgroundColor;
+        grid->grid[oldTail.y][oldTail.x].isWorm = false;
     }
     
     // Move worm segments forward
@@ -102,19 +102,19 @@ void UpdateWormPosition(Grid *grid, GameState *state, Vector2 newHead, bool grow
     
     // Update grid with new positions
     for (int i = 0; i < state->worm.length; i++) {
-        Vector2 pos = state->worm.body[i].position;
-        grid->grid[(int)pos.y][(int)pos.x].color = state->conf.wormColor;
-        grid->grid[(int)pos.y][(int)pos.x].isWorm = true;
+        Pos pos = state->worm.body[i].position;
+        grid->grid[pos.y][pos.x].color = state->conf.wormColor;
+        grid->grid[pos.y][pos.x].isWorm = true;
     }
 }
 
 // Simplified UpdateAI function
 void UpdateAI(Grid *grid, GameState *state) {
-    Vector2 head = state->worm.body[0].position;
-    Vector2 fruitPos = state->fruit.position;
+    Pos head = state->worm.body[0].position;
+    Pos fruitPos = state->fruit.position;
     
     // First try to move towards fruit
-    Vector2 desiredDir = {0, 0};
+    Pos desiredDir = {0, 0};
     
     // Try horizontal movement first
     if (fruitPos.x != head.x) {
@@ -128,7 +128,7 @@ void UpdateAI(Grid *grid, GameState *state) {
     }
     
     // Check if desired move is safe
-    Vector2 nextPos = {
+    Pos nextPos = {
         head.x + desiredDir.x,
         head.y + desiredDir.y
     };
@@ -139,7 +139,7 @@ void UpdateAI(Grid *grid, GameState *state) {
     }
     
     // If desired move is not safe, try other directions
-    Vector2 directions[] = {
+    Pos directions[] = {
         {1, 0},   // Right
         {-1, 0},  // Left
         {0, 1},   // Down
@@ -147,8 +147,8 @@ void UpdateAI(Grid *grid, GameState *state) {
     };
     
     for (int i = 0; i < 4; i++) {
-        Vector2 dir = directions[i];
-        Vector2 newPos = {head.x + dir.x, head.y + dir.y};
+        Pos dir = directions[i];
+        Pos newPos = {head.x + dir.x, head.y + dir.y};
         
         if (IsSafeMove(grid, newPos)) {
             state->currentDir = dir;
@@ -169,8 +169,8 @@ void HandleFruitCollision(Grid *grid, GameState *state) {
     }
     
     // Remove old fruit from grid
-    Vector2 oldFruitPos = state->fruit.position;
-    grid->grid[(int)oldFruitPos.y][(int)oldFruitPos.x].isFruit = false;
+    Pos oldFruitPos = state->fruit.position;
+    grid->grid[oldFruitPos.y][oldFruitPos.x].isFruit = false;
     
     // Create new fruit at random position
     InitializeFruit(grid, state);
@@ -232,7 +232,7 @@ void DesignUpdateFrame(Grid *grid, GameState *state) {
             // Update AI and check for collisions
             UpdateAI(grid, state);
             
-            Vector2 newHead = CalculateNewHead(state);
+            Pos newHead = CalculateNewHead(state);
             if (CheckGameOver(grid, newHead)) {
                 state->gameOver = true;
             }
