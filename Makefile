@@ -11,7 +11,7 @@ endif
 RAYLIB_PATH ?= raylib/raylib-5.5-raspberry
 RAYLIB_LIBS ?= -lm -lGLESv2 -lEGL -ldrm -lgbm
 
-CFLAGS ?= -I$(RAYLIB_PATH)/include $(RAYLIB_LIBS)
+CFLAGS ?= -I$(RAYLIB_PATH)/include $(RAYLIB_LIBS) -g
 CXXFLAGS ?= $(CFLAGS) -std=c++11
 LDLIBS ?= $(RAYLIB_PATH)/libraylib.a
 
