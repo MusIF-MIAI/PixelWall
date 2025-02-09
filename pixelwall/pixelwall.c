@@ -20,8 +20,8 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 Config defaultConf = {
     .rows = 16,
     .cols = 22,
-    .windowWidth = 1280,
-    .windowHeight = 720,
+    .windowWidth = 1276,
+    .windowHeight = 928,
     .frameRate = 10,
     .borderSize = 2,
     .borderColor = GRAY,
