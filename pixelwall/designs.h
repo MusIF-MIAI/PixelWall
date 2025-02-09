@@ -23,6 +23,7 @@ extern Design randomPixelsDesign;
 extern Design textDesign;
 extern Design pongDesign;
 extern Design lifeDesign;
+extern Design cm5Design;
 
 Design *designs[] = {
     &snakeDesign,
@@ -30,4 +31,5 @@ Design *designs[] = {
     &textDesign,
     &pongDesign,
     &lifeDesign,
+    &cm5Design,
 };
