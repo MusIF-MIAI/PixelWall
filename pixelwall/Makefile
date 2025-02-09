@@ -17,7 +17,7 @@ ALL_PROGRAMS := pixelwall
 .PHONY: all
 all: $(ALL_PROGRAMS)
 
-pixelwall: pixelwall.c design_snake_animation.c design_random_pixels.c design_text.c
+pixelwall: pixelwall.c design_snake_animation.c design_random_pixels.c design_text.c design_pong.c
 
 clean:
 	rm -f $(ALL_PROGRAMS)
