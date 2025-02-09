@@ -21,6 +21,8 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <time.h>
+#include <stdlib.h>
 
 #include "raylib.h"
 

@@ -22,10 +22,12 @@ extern Design snakeDesign;
 extern Design randomPixelsDesign;
 extern Design textDesign;
 extern Design pongDesign;
+extern Design lifeDesign;
 
 Design *designs[] = {
     &snakeDesign,
     &randomPixelsDesign,
     &textDesign,
     &pongDesign,
+    &lifeDesign,
 };
