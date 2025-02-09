@@ -96,7 +96,7 @@ static void Destroy(void *data) {
 }
 
 Design randomPixelsDesign = {
-    .name = "random pixels",
+    .name = "random-pixels",
     .PrintHelp = PrintHelp,
     .Create = Create,
     .UpdateFrame = UpdateFrame,

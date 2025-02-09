@@ -28,6 +28,7 @@ Config defaultConf = {
     .moveInterval = 0.2f,
     .backgroundColor = BLACK,
     .showData = false,
+    .designIndex = 0,
 };
 
 #define MAX_COLOR_VALUE 255
@@ -173,6 +174,7 @@ void PrintHelp() {
     printf("Snake Animation - Command Line Options\n");
     printf("Usage: snake_animation [options]\n");
     printf("Options:\n");
+    printf("  -d <design>      Set design (default: %s)\n", designs[0]->name);
     printf("  -B <color>       Set background color (R,G,B, default: %d,%d,%d)\n",
            defaultConf.backgroundColor.r, defaultConf.backgroundColor.g, defaultConf.backgroundColor.b);
     printf("  -O <color>       Set border color (R,G,B, default: %d,%d,%d)\n",
@@ -214,8 +216,17 @@ Color ParseColor(const char *string) {
 Config ParseCommandLine(int argc, char *argv[]) {
     int opt;
     Config conf = defaultConf;
-    while ((opt = getopt(argc, argv, ":r:c:w:H:f:b:B:O:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:r:c:w:H:f:b:B:O:h")) != -1) {
         switch (opt) {
+            case 'd':
+                for (int i = 0; i < sizeof(designs) / sizeof(Design *); i++) {
+                    if (strcmp(designs[i]->name, optarg) == 0) {
+                        conf.designIndex = i;
+                        break;
+                    }
+                    printf("No design found with name: %s\n", optarg);
+                }
+                break;
             case 'r':
                 conf.rows = atoi(optarg);
                 if (conf.rows < 5) conf.rows = 5;
@@ -276,8 +287,7 @@ int main(int argc, char *argv[]) {
     GridFillColor(grid, grid->conf.backgroundColor);
     GridFillData(grid, 0);
 
-    int designIndex = 0;
-    Design *design = designs[designIndex];
+    Design *design = designs[conf.designIndex];
 
     printf("Starting design: %s\n", design->name);
     void *data = design->Create(grid, argc, argv);
@@ -293,18 +303,18 @@ int main(int argc, char *argv[]) {
         }
 
         if (IsKeyPressed(KEY_PERIOD)) {
-            designIndex++;
-            if (designIndex >= designCount) {
-                designIndex = 0;
+            conf.designIndex++;
+            if (conf.designIndex >= designCount) {
+                conf.designIndex = 0;
             }
 
             changeDesign = true;
         }
 
         if (IsKeyPressed(KEY_COMMA)) {
-            designIndex--;
-            if (designIndex < 0) {
-                designIndex = designCount - 1;
+            conf.designIndex--;
+            if (conf.designIndex < 0) {
+                conf.designIndex = designCount - 1;
             }
 
             changeDesign = true;
@@ -312,7 +322,7 @@ int main(int argc, char *argv[]) {
 
         if (changeDesign) {
             design->Destroy(data);
-            design = designs[designIndex];
+            design = designs[conf.designIndex];
             printf("Switching to design: %s\n", design->name);
             GridFillColor(grid, grid->conf.backgroundColor);
             GridFillData(grid, 0);

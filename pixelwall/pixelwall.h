@@ -35,6 +35,7 @@ typedef struct {
     Color backgroundColor;
     Color borderColor;
     bool showData;
+    int designIndex;
 } Config;
 
 typedef struct {
