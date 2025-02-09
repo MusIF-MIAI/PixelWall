@@ -35,6 +35,7 @@ typedef struct {
     Color backgroundColor;
     Color borderColor;
     bool showData;
+    bool horizontalFlip;
     int designIndex;
 } Config;
 

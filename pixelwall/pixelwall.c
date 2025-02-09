@@ -29,6 +29,7 @@ Config defaultConf = {
     .backgroundColor = BLACK,
     .showData = false,
     .designIndex = 0,
+    .horizontalFlip = false,
 };
 
 #define MAX_COLOR_VALUE 255
@@ -99,6 +100,10 @@ void DrawPixelGrid(const Grid *grid) {
             int y = pos.y * cellHeight + grid->conf.borderSize;
 
             // Draw cell content
+            if (grid->conf.horizontalFlip) {
+                pos.x = grid->cols - 1 - pos.x;
+            }
+
             Color cellColor = GridGetColor(grid, pos);
             DrawRectangle(x, y, cellWidthNoBorder, cellHeightNoBorder, cellColor);
 
@@ -183,6 +188,7 @@ void PrintHelp() {
     printf("  -c <cols>        Set number of columns (default: %d)\n", defaultConf.cols);
     printf("  -w <width>       Set window width (default: %d)\n", defaultConf.windowWidth);
     printf("  -H <height>      Set window height (default: %d)\n", defaultConf.windowHeight);
+    printf("  -F               Flip horizontally\n");
     printf("  -f <rate>        Set frame rate (default: %d)\n", defaultConf.frameRate);
     printf("  -i <interval>    Set move interval in seconds (default: %.1f)\n", defaultConf.moveInterval);
     printf("  -b <size>        Set border size (default: %d)\n", defaultConf.borderSize);
@@ -216,7 +222,7 @@ Color ParseColor(const char *string) {
 Config ParseCommandLine(int argc, char *argv[]) {
     int opt;
     Config conf = defaultConf;
-    while ((opt = getopt(argc, argv, ":d:r:c:w:H:f:b:B:O:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:r:c:w:H:Ff:b:B:O:h")) != -1) {
         switch (opt) {
             case 'd':
                 for (int i = 0; i < sizeof(designs) / sizeof(Design *); i++) {
@@ -242,6 +248,9 @@ Config ParseCommandLine(int argc, char *argv[]) {
             case 'H':
                 conf.windowHeight = atoi(optarg);
                 if (conf.windowHeight < 100) conf.windowHeight = 100;
+                break;
+            case 'F':
+                conf.horizontalFlip = true;
                 break;
             case 'f':
                 conf.frameRate = atoi(optarg);
@@ -300,6 +309,10 @@ int main(int argc, char *argv[]) {
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_SPACE)) {
             grid->conf.showData = !grid->conf.showData;
+        }
+
+        if (IsKeyPressed(KEY_F)) {
+            grid->conf.horizontalFlip = !grid->conf.horizontalFlip;
         }
 
         if (IsKeyPressed(KEY_PERIOD)) {
