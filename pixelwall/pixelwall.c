@@ -175,9 +175,9 @@ void GridCleanup(Grid *grid) {
     grid->cols = 0;
 }
 
-void PrintHelp() {
-    printf("Snake Animation - Command Line Options\n");
-    printf("Usage: snake_animation [options]\n");
+void PrintHelp(int argc, char *argv[]) {
+    printf("The MIAI pixelwall\n");
+    printf("Usage: %s [options]\n", argv[0]);
     printf("Options:\n");
     printf("  -d <design>      Set design (default: %s)\n", designs[0]->name);
     printf("  -B <color>       Set background color (R,G,B, default: %d,%d,%d)\n",
@@ -274,7 +274,7 @@ Config ParseCommandLine(int argc, char *argv[]) {
                 conf.borderColor = ParseColor(optarg);
                 break;
             case 'h':
-                PrintHelp();
+                PrintHelp(argc, argv);
                 exit(EXIT_SUCCESS);
         }
     }
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]) {
     Config conf = ParseCommandLine(argc, argv);
 
     // Initialize window and set frame rate
-    InitWindow(conf.windowWidth, conf.windowHeight, "Snake Animation");
+    InitWindow(conf.windowWidth, conf.windowHeight, "Pixelwall");
     SetTargetFPS(conf.frameRate);
 
     GridInitialize(grid, conf);
