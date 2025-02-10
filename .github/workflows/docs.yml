@@ -1,0 +1,42 @@
+name: Deploy docs
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build wasm
+        uses: addnab/docker-run-action@v3
+        with:
+          image: emscripten/emsdk
+          options: -v ${{ github.workspace }}:/src
+          run: |
+            make wasm
+
+      - name: Upload artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: others/wasm
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
