@@ -16,77 +16,69 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
 #include "pixelwall.h"
 
-static Color OffColor = BLACK;
-static Color OnColor = (Color) { 200, 10, 5, 255 };
-
 static void PrintHelp() {
 }
 
-static void* Create(Grid *grid, int argc, char *argv[]) {
-    for (int i = 0; i < grid->rows; i++) {
-        for (int j = 0; j < grid->cols; j++) {
-            Pos pos = {j, i};
-            GridSetData(grid, pos, (rand() % 3) == 0);
+static Color RandomColor() {
+    Color OffColor = BLACK;
+    Color OnColor = (Color) { 200, 10, 5, 255 };
+    return ((rand() % 5) == 0) ? OnColor : OffColor;
+}
+
+static void RotateRight(Grid *grid, int y) {
+    for (int x = 0; x < grid->cols - 1; x++) {
+        GridSetColor(grid, (Pos){x, y}, GridGetColor(grid, (Pos){x + 1, y}));
+    }
+
+    GridSetColor(grid, (Pos){grid->cols - 1, y}, RandomColor());
+}
+
+static void RotateLeft(Grid *grid, int y) {
+    for (int x = grid->cols - 1; x > 0; x--) {
+        GridSetColor(grid, (Pos){x, y}, GridGetColor(grid, (Pos){x - 1, y}));
+    }
+
+    GridSetColor(grid, (Pos){0, y}, RandomColor());
+}
+
+static void RotateDown(Grid *grid, int x) {
+    for (int y = 0; y < grid->rows - 1; y++) {
+        GridSetColor(grid, (Pos){x, y}, GridGetColor(grid, (Pos){x, y + 1}));
+    }
+
+    GridSetColor(grid, (Pos){x, grid->rows - 1}, RandomColor());
+}
+
+static void RotateUp(Grid *grid, int x) {
+    for (int y = grid->rows - 1; y > 0; y--) {
+        GridSetColor(grid, (Pos){x, y}, GridGetColor(grid, (Pos){x, y - 1}));
+    }
+
+    GridSetColor(grid, (Pos){x, 0}, RandomColor());
+}
+
+static void *Create(Grid *grid, int argc, char *argv[]) {
+    for (int x = 0; x < grid->cols; x++) {
+        for (int y = 0; y < grid->rows; y++) {
+            GridSetColor(grid, (Pos){x, y}, RandomColor());
         }
     }
 
-    srand(time(NULL));    
     return NULL;
 }
 
-static void UpdateFrame1(Grid *grid, void *data) {
-    for (int y = 0; y < grid->rows; y++) {
-        if ((y / 4) % 2) {
-            int first = GridGetData(grid, (Pos){0, y});
-            for (int x = 0; x < grid->cols - 1; x++) {
-                GridSetData(grid, (Pos){x, y}, GridGetData(grid, (Pos){x + 1, y}));
-            }
-
-            GridSetData(grid, (Pos){grid->cols - 1, y}, first);
-        } else {
-            int last = GridGetData(grid, (Pos){grid->cols - 1, y});
-            for (int x = grid->cols - 1; x > 0; x--) {
-                GridSetData(grid, (Pos){x, y}, GridGetData(grid, (Pos){x - 1, y}));
-            }
-
-            GridSetData(grid, (Pos){0, y}, last);
-        }
-    }
-
-    for (int y = 0; y < grid->rows; y++) {
-        for (int x = 0; x < grid->cols; x++) {
-            Pos pos = (Pos) { x, y };
-            bool isOn = GridGetData(grid, pos);
-            GridSetColor(grid, pos, isOn ? OnColor : OffColor);
-        }
-    }
-}
-
 static void UpdateFrame(Grid *grid, void *data) {
-    for (int x = 0; x < grid->cols; x++) {
-        if ((x / 4) % 2) {
-            int first = GridGetData(grid, (Pos){x, 0});
-            for (int y = 0; y < grid->rows - 1; y++) {
-                GridSetData(grid, (Pos){x, y}, GridGetData(grid, (Pos){x, y + 1}));
-            }
+    static void (*rotations[2][2])(Grid *, int) = {
+         {RotateUp, RotateDown },
+         {RotateRight, RotateLeft},
+    };
 
-            GridSetData(grid, (Pos){x, grid->rows - 1}, first);
-        } else {
-            int last = GridGetData(grid, (Pos){x, grid->rows - 1});
-            for (int y = grid->rows - 1; y > 0; y--) {
-                GridSetData(grid, (Pos){x, y}, GridGetData(grid, (Pos){x, y - 1}));
-            }
+    static bool horizontal = true;
+    int limit = horizontal ? grid->rows : grid->cols;
 
-            GridSetData(grid, (Pos){x, 0}, last);
-        }
-    }
-
-    for (int y = 0; y < grid->rows; y++) {
-        for (int x = 0; x < grid->cols; x++) {
-            Pos pos = (Pos) { x, y };
-            bool isOn = GridGetData(grid, pos);
-            GridSetColor(grid, pos, isOn ? OnColor : OffColor);
-        }
+    for (int i = 0; i < limit; i++) {
+        bool stripe = ((i / 4) % 2) == 0;
+        rotations[horizontal][stripe](grid, i);
     }
 }
 
