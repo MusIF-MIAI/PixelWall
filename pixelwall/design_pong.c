@@ -17,9 +17,23 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 #include "pixelwall.h"
 
 typedef struct {
+    int paddle_len;
+    int margin;
+    Color paddle_color;
+    Color ball_color;
+} PongConf;
+
+static PongConf defaultConf = {
+    .paddle_len = 1,
+    .margin = 1,
+    .paddle_color = WHITE,
+    .ball_color = RED,
+};
+
+typedef struct {
+    PongConf conf;
     int rows;
     int cols;
-    int margin;
     Pos ball;
     Pos direction;
     int paddle1_y; // Position of the left paddle (y-coordinate)
@@ -29,15 +43,35 @@ typedef struct {
 } PongData;
 
 static void PongPrintHelp() {
-    printf("Simple Pong animation. Config options: rows, cols, frameRate.\n");
+    printf("  -M <margin>      Margin around playfield (default: %d)\n", defaultConf.margin);
+    printf("  -P <length>      Paddle length (default: %d)\n", defaultConf.paddle_len);
+    printf("  -p <paddle>      Paddle color (R,G,B, default: %d,%d,%d)\n",
+           defaultConf.paddle_color.r, defaultConf.paddle_color.g, defaultConf.paddle_color.b);
+    printf("  -o <ball>        Ball color (R,G,B, default: %d,%d,%d)\n",
+           defaultConf.ball_color.r, defaultConf.ball_color.g, defaultConf.ball_color.b);
+}
+
+static void ParseOptions(PongConf *conf, int argc, char *argv[]) {
+    int opt;
+
+    while ((opt = getopt(argc, argv, ":d:M:P:p:o:")) != -1) {
+        switch (opt) {
+            case 'M': conf->margin = atoi(optarg); break;
+            case 'P': conf->paddle_len = atoi(optarg); break;
+            case 'p': conf->paddle_color = ParseColor(optarg); break;
+            case 'o': conf->ball_color = ParseColor(optarg); break;
+        }
+    }
 }
 
 static void* PongCreate(Grid *grid, int argc, char *argv[]) {
     PongData *pd = malloc(sizeof(PongData));
-    pd->margin = 1;
+    if (!pd) return NULL;
+    pd->conf = defaultConf;
+    ParseOptions(&pd->conf, argc, argv);
 
-    pd->rows = grid->conf.rows - 2 * pd->margin;
-    pd->cols = grid->conf.cols - 2 * pd->margin;
+    pd->rows = grid->conf.rows - 2 * pd->conf.margin;
+    pd->cols = grid->conf.cols - 2 * pd->conf.margin;
 
     // Initialize paddles and ball
     pd->paddle1_y = pd->rows / 2;
@@ -57,15 +91,15 @@ static void PongUpdateFrame(Grid *grid, void *data) {
     PongData *pd = (PongData*)data;
 
     // Clear the previous ball position
-    Pos prev_ball = {pd->margin + pd->ball.x, pd->margin + pd->ball.y};
-    GridSetColor(grid, prev_ball, (Color){0, 0, 0, 255}); // Black with full opacity
+    Pos prev_ball = {pd->conf.margin + pd->ball.x, pd->conf.margin + pd->ball.y};
+    GridSetColor(grid, prev_ball, grid->conf.backgroundColor);
 
     // Clear the previous paddle positions
-    for (int i = -1; i <= 1; i++) {
-        Pos paddle1_pos = {pd->margin, pd->margin + pd->prev_paddle1_y + i};
-        Pos paddle2_pos = {pd->margin + pd->cols - 1, pd->margin + pd->prev_paddle2_y + i};
-        GridSetColor(grid, paddle1_pos, (Color){0, 0, 0, 255}); // Clear left paddle
-        GridSetColor(grid, paddle2_pos, (Color){0, 0, 0, 255}); // Clear right paddle
+    for (int i = -pd->conf.paddle_len; i <= pd->conf.paddle_len; i++) {
+        Pos paddle1_pos = {pd->conf.margin, pd->conf.margin + pd->prev_paddle1_y + i};
+        Pos paddle2_pos = {pd->conf.margin + pd->cols - 1, pd->conf.margin + pd->prev_paddle2_y + i};
+        GridSetColor(grid, paddle1_pos, grid->conf.backgroundColor);
+        GridSetColor(grid, paddle2_pos, grid->conf.backgroundColor);
     }
 
     // Update ball position
@@ -79,10 +113,10 @@ static void PongUpdateFrame(Grid *grid, void *data) {
     }
 
     // Ball collision with paddles
-    if (pd->ball.x == 1 && pd->ball.y >= pd->paddle1_y - 1 && pd->ball.y <= pd->paddle1_y + 1) {
+    if (pd->ball.x == 1 && pd->ball.y >= pd->paddle1_y - pd->conf.paddle_len && pd->ball.y <= pd->paddle1_y + pd->conf.paddle_len) {
         pd->direction.x *= -1; // Reverse x-direction (left paddle)
     }
-    if (pd->ball.x == pd->cols - 2 && pd->ball.y >= pd->paddle2_y - 1 && pd->ball.y <= pd->paddle2_y + 1) {
+    if (pd->ball.x == pd->cols - 2 && pd->ball.y >= pd->paddle2_y - pd->conf.paddle_len && pd->ball.y <= pd->paddle2_y + pd->conf.paddle_len) {
         pd->direction.x *= -1; // Reverse x-direction (right paddle)
     }
 
@@ -106,22 +140,22 @@ static void PongUpdateFrame(Grid *grid, void *data) {
     if (pd->ball.y < pd->paddle2_y) pd->paddle2_y--;
 
     // Ensure paddles stay within the grid
-    if (pd->paddle1_y < 1) pd->paddle1_y = 1;
-    if (pd->paddle1_y >= pd->rows - 1) pd->paddle1_y = pd->rows - 2;
-    if (pd->paddle2_y < 1) pd->paddle2_y = 1;
-    if (pd->paddle2_y >= pd->rows - 1) pd->paddle2_y = pd->rows - 2;
+    if (pd->paddle1_y < pd->conf.paddle_len) pd->paddle1_y = pd->conf.paddle_len;
+    if (pd->paddle1_y >= pd->rows - pd->conf.paddle_len) pd->paddle1_y = pd->rows - pd->conf.paddle_len - 1;
+    if (pd->paddle2_y < pd->conf.paddle_len) pd->paddle2_y = pd->conf.paddle_len;
+    if (pd->paddle2_y >= pd->rows - pd->conf.paddle_len) pd->paddle2_y = pd->rows - pd->conf.paddle_len - 1;
 
     // Draw paddles
-    for (int i = -1; i <= 1; i++) {
-        Pos paddle1_pos = {pd->margin, pd->margin + pd->paddle1_y + i};
-        Pos paddle2_pos = {pd->margin + pd->cols - 1, pd->margin + pd->paddle2_y + i};
-        GridSetColor(grid, paddle1_pos, (Color){255, 255, 255, 255}); // White paddles with full opacity
-        GridSetColor(grid, paddle2_pos, (Color){255, 255, 255, 255});
+    for (int i = -pd->conf.paddle_len; i <= pd->conf.paddle_len; i++) {
+        Pos paddle1_pos = {pd->conf.margin, pd->conf.margin + pd->paddle1_y + i};
+        Pos paddle2_pos = {pd->conf.margin + pd->cols - 1, pd->conf.margin + pd->paddle2_y + i};
+        GridSetColor(grid, paddle1_pos, pd->conf.paddle_color);
+        GridSetColor(grid, paddle2_pos, pd->conf.paddle_color);
     }
 
     // Draw ball
-    Pos ball_pos = {pd->margin + pd->ball.x, pd->margin + pd->ball.y};
-    GridSetColor(grid, ball_pos, (Color){255, 0, 0, 255}); // Red ball with full opacity
+    Pos ball_pos = {pd->conf.margin + pd->ball.x, pd->conf.margin + pd->ball.y};
+    GridSetColor(grid, ball_pos, pd->conf.ball_color);
 
     // Update previous paddle positions
     pd->prev_paddle1_y = pd->paddle1_y;
