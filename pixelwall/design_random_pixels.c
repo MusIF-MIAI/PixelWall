@@ -31,13 +31,8 @@ static void ParseOptions(RandomConf *conf, int argc, char *argv[]) {
 
     while ((opt = getopt(argc, argv, ":I:m:")) != -1) {
         switch (opt) {
-            case 'I':
-                conf->initialSquares = atoi(optarg);
-                break;
-
-            case 'm':
-                conf->maxRandomTick = atoi(optarg);
-                break;
+            case 'I': conf->initialSquares = atoi(optarg); break;
+            case 'm': conf->maxRandomTick = atoi(optarg); break;
         }
     }
 }

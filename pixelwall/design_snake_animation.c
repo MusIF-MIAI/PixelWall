@@ -260,16 +260,9 @@ static void ParseSnakeOptions(SnakeConf *conf, int argc, char *argv[]) {
 
     while ((opt = getopt(argc, argv, ":l:m:W:")) != -1) {
         switch (opt) {
-            case 'l':
-                conf->wormLength = atoi(optarg);
-                if (conf->wormLength < 1) conf->wormLength = 1;
-                break;
-            case 'm':
-                conf->maxWormLength = atoi(optarg);
-                break;
-            case 'W':
-                conf->wormColor = ParseColor(optarg);
-                break;
+            case 'l': conf->wormLength = atoi(optarg); break;
+            case 'm': conf->maxWormLength = atoi(optarg); break;
+            case 'W': conf->wormColor = ParseColor(optarg); break;
         }
     }
 }

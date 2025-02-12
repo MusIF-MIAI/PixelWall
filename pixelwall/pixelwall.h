@@ -41,6 +41,11 @@ typedef struct {
     int designIndex;
 } Config;
 
+typedef enum {
+    HORIZONTAL = 0,
+    VERTICAL = 1,
+} Direction;
+
 typedef struct {
     Color color;
     uintptr_t data;
@@ -79,4 +84,6 @@ void GridCleanup(Grid *grid);
 Color GetRandomColor();
 Pos GetRandomDirection();
 Pos GetRandomPositionIn(int rows, int cols);
+
+Direction ParseDirection(const char *string);
 Color ParseColor(const char *string);

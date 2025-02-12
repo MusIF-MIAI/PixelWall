@@ -203,6 +203,17 @@ void PrintHelp(int argc, char *argv[]) {
     }
 }
 
+Direction ParseDirection(const char *string) {
+    Direction d = atoi(optarg);
+
+    if (d != HORIZONTAL && d != VERTICAL) {
+        fprintf(stderr, "Invalid direction. Use 0 for horizontal, 1 for vertical\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return d;
+}
+
 Color ParseColor(const char *string) {
     int r, g, b;
 

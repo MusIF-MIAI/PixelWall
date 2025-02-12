@@ -16,11 +16,8 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
 #include "pixelwall.h"
 
-#define HORIZONTAL 0
-#define VERTICAL 1
-
 typedef struct {
-    int direction;
+    Direction direction;
     int fontSize;
     const char* text;
     Color color;
@@ -42,26 +39,12 @@ typedef struct {
 static void ParseOptions(TextConf *conf, int argc, char *argv[]) {
     int opt;
     
-    // Dump argv
-    printf("Command line arguments:\n");
-    for (int i = 0; i < argc; i++) {
-        printf("argv[%d]: %s\n", i, argv[i]);
-    }
-
     while ((opt = getopt(argc, argv, ":t:f:T:d:")) != -1) {
-        printf(">> %c\n", opt);
         switch (opt) {
             case 't': conf->text = optarg; break;
             case 'f': conf->fontSize = atoi(optarg); break;
             case 'T': conf->color = ParseColor(optarg); break;
-            case 'd': 
-                conf->direction = atoi(optarg);
-                if (conf->direction != HORIZONTAL && conf->direction != VERTICAL) {
-                    fprintf(stderr, "Invalid direction. Use 0 for horizontal, 1 for vertical\n");
-                    exit(EXIT_FAILURE);
-                }
-                break;
-
+            case 'd': conf->direction = ParseDirection(optarg); break;
         }
     }
 }
