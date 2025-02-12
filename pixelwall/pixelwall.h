@@ -71,6 +71,14 @@ typedef struct {
     void (*Destroy)(void *data);
 } Design;
 
+typedef struct {
+    Image image;
+    Texture2D texture;
+    int size;
+    int count;
+    int charOffset;
+} ArcadeFont;
+
 void GridInitialize(Grid *grid, Config conf);
 void GridFillColor(Grid *grid, Color color);
 void GridFillData(Grid *grid, uintptr_t data);
@@ -87,3 +95,5 @@ Pos GetRandomPositionIn(int rows, int cols);
 
 Direction ParseDirection(const char *string);
 Color ParseColor(const char *string);
+
+extern ArcadeFont fonts;

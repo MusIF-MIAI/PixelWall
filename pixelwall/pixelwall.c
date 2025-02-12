@@ -16,6 +16,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 
 #include "pixelwall.h"
 #include "designs.h"
+#include "font.h"
 
 Config defaultConf = {
     .rows = 16,
@@ -33,6 +34,9 @@ Config defaultConf = {
 };
 
 #define MAX_COLOR_VALUE 255
+
+ArcadeFont fonts;
+Grid theGrid;
 
 // Initialize the game grid with default values
 void GridFillColor(Grid *grid, Color color) {
@@ -80,8 +84,6 @@ Pos GetRandomPositionIn(int rows, int cols) {
         GetRandomValue(0, rows - 1),
     };
 }
-
-Grid theGrid;
 
 void DrawPixelGrid(const Grid *grid) {
     // Calculate cell dimensions excluding borders
@@ -315,6 +317,17 @@ int main(int argc, char *argv[]) {
     float timer = 0;
     bool changeDesign = false;
     int designCount = sizeof(designs) / sizeof(Design *);
+
+    int cellWidth = grid->conf.windowWidth / grid->cols;
+    int cellHeight = grid->conf.windowHeight / grid->rows;
+    int cellMin = cellWidth < cellHeight ? cellWidth : cellHeight;
+
+    // Load arcade fonts
+    fonts.image = LoadImageFromMemory(".png", fontone_png, fontone_png_len);
+    fonts.texture = LoadTextureFromImage(fonts.image);
+    fonts.size = 8;
+    fonts.charOffset = 32;
+    fonts.count = fonts.image.height / fonts.size;
 
     // Main game loop
     while (!WindowShouldClose()) {

@@ -12,7 +12,7 @@ wasm:
 	$(MAKE) -C pixelwall \
 		CC=emcc \
 		RAYLIB_PATH=../raylib/raylib-5.5-wasm \
-		RAYLIB_LIBS="-s USE_GLFW=3 -s ASYNCIFY"
+		RAYLIB_LIBS="-s USE_GLFW=3 -s ASYNCIFY -s ALLOW_MEMORY_GROWTH"
 	cp pixelwall/pixelwall others/wasm/pixelwall.js
 	cp pixelwall/pixelwall.wasm others/wasm
 
