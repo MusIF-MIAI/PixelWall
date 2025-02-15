@@ -20,7 +20,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 static void LifePrintHelp() {
 }
 
-static void* LifeCreate(Grid *grid, int argc, char *argv[]) {
+static void LifeReset(Grid *grid) {
     for (int i = 0; i < grid->rows; i++) {
         for (int j = 0; j < grid->cols; j++) {
             Pos pos = {j, i};
@@ -28,8 +28,11 @@ static void* LifeCreate(Grid *grid, int argc, char *argv[]) {
             GridSetColor(grid, pos, color);
         }
     }
+}
 
-    srand(time(NULL));    
+static void* LifeCreate(Grid *grid, int argc, char *argv[]) {
+    srand(time(NULL));
+    LifeReset(grid);
     return NULL;
 }
 
@@ -49,13 +52,29 @@ static int CountLiveNeighbors(Grid *grid, int x, int y) {
     return count;
 }
 
+static uint32_t hash(int a, int b, int c) {
+    return (a * 2654435761U) ^ (b * 2246822519U) ^ (c * 3266489917U);
+}
+
+static uint32_t hash_combine(uint32_t prev, uint32_t next) {
+    return prev ^ (next + 0x9e3779b9 + (prev << 6) + (prev >> 2));
+}
+
 static void LifeUpdateFrame(Grid *grid, void *data) {
+    static uint32_t hashes[4] = { 1, 2, 3, 4 };
+    static uint32_t hashes_head = 0;
+
+    hashes[hashes_head] = 0;
+
     for (int i = 0; i < grid->rows; i++) {
         for (int j = 0; j < grid->cols; j++) {
             Pos pos = {j, i};
 
             int live = CountLiveNeighbors(grid, i, j);
             GridSetData(grid, pos, live);
+
+            uint32_t this_hash = hash(i, j, live);
+            hashes[hashes_head] = hash_combine(hashes[hashes_head], this_hash);
         }
     }
 
@@ -72,6 +91,24 @@ static void LifeUpdateFrame(Grid *grid, void *data) {
             } 
         }
     }
+
+    bool completely_frozen = (
+        (hashes[0] == hashes[1]) &&
+        (hashes[1] == hashes[2]) &&
+        (hashes[2] == hashes[3]) &&
+        (hashes[3] == hashes[0])
+    );
+
+    bool oscillating = (
+        (hashes[0] == hashes[2]) &&
+        (hashes[1] == hashes[3])
+    );
+
+    if (completely_frozen || oscillating) {
+        LifeReset(grid);
+    }
+
+    hashes_head = (hashes_head + 1) % 4;
 }
 
 static void LifeDestroy(void *data) {
