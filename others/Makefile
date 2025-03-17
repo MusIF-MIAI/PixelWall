@@ -12,7 +12,7 @@ CFLAGS ?= -I$(RAYLIB_PATH)/include $(RAYLIB_LIBS) -g
 CXXFLAGS ?= $(CFLAGS) -std=c++11
 LDLIBS ?= $(RAYLIB_PATH)/libraylib.a
 
-ALL_PROGRAMS := test_grid
+ALL_PROGRAMS := test_grid osc
 
 .PHONY: all
 all: $(ALL_PROGRAMS)
