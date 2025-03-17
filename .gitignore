@@ -1,9 +1,13 @@
 pixelwall/pixelwall
 others/test_grid
+others/osc
 
 .cache/
 .vscode/
 compile_commands.json
+
+*.wasm
+others/wasm/pixelwall.js
 
 # Prerequisites
 *.d
