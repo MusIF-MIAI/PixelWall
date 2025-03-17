@@ -40,10 +40,11 @@ static int CountLiveNeighbors(Grid *grid, int x, int y) {
     int count = 0;
     for (int dx = -1; dx <= 1; dx++) {
         for (int dy = -1; dy <= 1; dy++) {
-            if (dx == 0 && dy == 0) continue;
+            if (dx == 0 && dy == 0)
+                continue;
             int nx = x + dx, ny = y + dy;
-            if (nx >= 0 && nx < grid->conf.rows && ny >= 0 && ny < grid->conf.cols) {
-                Pos pos = {ny, nx};
+            if (nx >= 0 && nx < grid->cols && ny >= 0 && ny < grid->rows) {
+                Pos pos = {nx, ny};
                 if (GridGetColor(grid, pos).r > 0)
                     count++;
             }
@@ -61,54 +62,48 @@ static uint32_t hash_combine(uint32_t prev, uint32_t next) {
 }
 
 static void LifeUpdateFrame(Grid *grid, void *data) {
-    static uint32_t hashes[4] = { 1, 2, 3, 4 };
-    static uint32_t hashes_head = 0;
-
-    hashes[hashes_head] = 0;
-
     for (int i = 0; i < grid->rows; i++) {
         for (int j = 0; j < grid->cols; j++) {
             Pos pos = {j, i};
-
-            int live = CountLiveNeighbors(grid, i, j);
+            int live = CountLiveNeighbors(grid, j, i);
             GridSetData(grid, pos, live);
-
-            uint32_t this_hash = hash(i, j, live);
-            hashes[hashes_head] = hash_combine(hashes[hashes_head], this_hash);
         }
     }
-
+    
+    uint32_t current_hash = 0;
     for (int i = 0; i < grid->rows; i++) {
         for (int j = 0; j < grid->cols; j++) {
             Pos pos = {j, i};
             int liveNeighbors = GridGetData(grid, pos);
             bool wasAlive = GridGetColor(grid, pos).r > 0;
-
-            if (wasAlive && (liveNeighbors < 2 || liveNeighbors > 3)) {
-                GridSetColor(grid, pos, BLACK);
-            } else if (!wasAlive && liveNeighbors == 3) {
-                GridSetColor(grid, pos, WHITE);
-            } 
+            bool newAlive = wasAlive;
+            if (wasAlive && (liveNeighbors < 2 || liveNeighbors > 3))
+                newAlive = false;
+            else if (!wasAlive && liveNeighbors == 3)
+                newAlive = true;
+            
+            GridSetColor(grid, pos, newAlive ? WHITE : BLACK);
+            
+            current_hash = hash_combine(current_hash, hash(j, i, newAlive ? 1 : 0));
         }
     }
-
-    bool completely_frozen = (
-        (hashes[0] == hashes[1]) &&
-        (hashes[1] == hashes[2]) &&
-        (hashes[2] == hashes[3]) &&
-        (hashes[3] == hashes[0])
-    );
-
-    bool oscillating = (
-        (hashes[0] == hashes[2]) &&
-        (hashes[1] == hashes[3])
-    );
-
-    if (completely_frozen || oscillating) {
-        LifeReset(grid);
+    
+    static int frame_counter = 0;
+    static uint32_t hash_prev = 0;
+    static uint32_t hash_prev2 = 0;
+    
+    if (frame_counter % 10 == 0) {
+        if (current_hash == hash_prev || current_hash == hash_prev2) {
+            LifeReset(grid);
+            hash_prev = 0;
+            hash_prev2 = 0;
+            frame_counter = 0;
+            return;
+        }
+        hash_prev2 = hash_prev;
+        hash_prev = current_hash;
     }
-
-    hashes_head = (hashes_head + 1) % 4;
+    frame_counter++;
 }
 
 static void LifeDestroy(void *data) {
