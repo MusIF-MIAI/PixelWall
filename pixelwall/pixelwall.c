@@ -31,6 +31,7 @@ Config defaultConf = {
     .showData = false,
     .designIndex = 0,
     .horizontalFlip = false,
+    .changeTimer = 5 * 60,
 };
 
 #define MAX_COLOR_VALUE 255
@@ -194,6 +195,7 @@ void PrintHelp(int argc, char *argv[]) {
     printf("  -f <rate>        Set frame rate (default: %d)\n", defaultConf.frameRate);
     printf("  -i <interval>    Set move interval in seconds (default: %.1f)\n", defaultConf.moveInterval);
     printf("  -b <size>        Set border size (default: %d)\n", defaultConf.borderSize);
+    printf("  -T <seconds>     Change design every <seconds> (default: %d)\n", (int)defaultConf.changeTimer);
     printf("  -h               Show this help message\n");
 
     printf("\n");
@@ -235,7 +237,7 @@ Color ParseColor(const char *string) {
 Config ParseCommandLine(int argc, char *argv[]) {
     int opt;
     Config conf = defaultConf;
-    while ((opt = getopt(argc, argv, ":d:r:c:w:H:Ff:b:B:O:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:r:c:w:H:Ff:b:B:O:T:h")) != -1) {
         switch (opt) {
             case 'd':
                 for (int i = 0; i < sizeof(designs) / sizeof(Design *); i++) {
@@ -286,6 +288,9 @@ Config ParseCommandLine(int argc, char *argv[]) {
             case 'O':
                 conf.borderColor = ParseColor(optarg);
                 break;
+            case 'T':
+                conf.changeTimer = atof(optarg);
+                break;
             case 'h':
                 PrintHelp(argc, argv);
                 exit(EXIT_SUCCESS);
@@ -314,7 +319,11 @@ int main(int argc, char *argv[]) {
     printf("Starting design: %s\n", design->name);
     void *data = design->Create(grid, argc, argv);
 
+    float changeTimer = conf.changeTimer;
     float timer = 0;
+    bool showTimer = false;
+
+    bool changeForTimeout = false;
     bool changeDesign = false;
     int designCount = sizeof(designs) / sizeof(Design *);
 
@@ -331,6 +340,13 @@ int main(int argc, char *argv[]) {
 
     // Main game loop
     while (!WindowShouldClose()) {
+        changeTimer -= GetFrameTime();
+
+        if (changeTimer <= 0) {
+            changeTimer = conf.changeTimer;
+            changeForTimeout = true;
+        }
+
         if (IsKeyPressed(KEY_SPACE)) {
             grid->conf.showData = !grid->conf.showData;
         }
@@ -339,13 +355,18 @@ int main(int argc, char *argv[]) {
             grid->conf.horizontalFlip = !grid->conf.horizontalFlip;
         }
 
-        if (IsKeyPressed(KEY_PERIOD)) {
+        if (IsKeyPressed(KEY_T)) {
+            showTimer = !showTimer;
+        }
+
+        if (IsKeyPressed(KEY_PERIOD) || changeForTimeout) {
             conf.designIndex++;
             if (conf.designIndex >= designCount) {
                 conf.designIndex = 0;
             }
 
             changeDesign = true;
+            changeForTimeout = false;
         }
 
         if (IsKeyPressed(KEY_COMMA)) {
@@ -379,6 +400,17 @@ int main(int argc, char *argv[]) {
         BeginDrawing();
             ClearBackground(grid->conf.backgroundColor);
             DrawPixelGrid(grid);
+
+            if (showTimer) {
+                int seconds = (int)changeTimer % 60;
+                int minutes = (int)changeTimer / 60;
+                float rest = changeTimer - (int)changeTimer;
+
+                const char *r = TextFormat("%f", rest);
+                const char *txt = TextFormat("%d:%d.%s", minutes, seconds, r+2);
+                DrawText(txt, 10, 10, 20, WHITE);
+            }
+
         EndDrawing();
     }
 

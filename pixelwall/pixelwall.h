@@ -39,6 +39,7 @@ typedef struct {
     bool showData;
     bool horizontalFlip;
     int designIndex;
+    float changeTimer;
 } Config;
 
 typedef enum {
