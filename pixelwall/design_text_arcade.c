@@ -108,6 +108,14 @@ static void UpdateFrame(Grid *grid, void *data) {
 
     GridFillColor(grid, grid->conf.backgroundColor);
 
+    if (IsKeyPressed(KEY_Y)) {
+        state->font = (state->font * 2 + 1)  % fonts.count;
+    }
+
+    if (IsKeyPressed(KEY_T)) {
+        state->font = (state->font * 2 - 1)  % fonts.count;
+    }
+
     if (char_pos == -offset_for_wrap && char_offset == 0) {
         // change font every time the text wraps around
         state->font = rand() % fonts.count;
