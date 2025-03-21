@@ -212,7 +212,6 @@ Direction ParseDirection(const char *string) {
 
     if (d != HORIZONTAL && d != VERTICAL) {
         fprintf(stderr, "Invalid direction. Use 0 for horizontal, 1 for vertical\n");
-        exit(EXIT_FAILURE);
     }
 
     return d;
@@ -222,15 +221,10 @@ Color ParseColor(const char *string) {
     int r, g, b;
 
     if (sscanf(string, "%d,%d,%d", &r, &g, &b) == 3) {
-        if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
-            fprintf(stderr, "Color values must be between 0 and 255\n");
-            exit(EXIT_FAILURE);
-        }   
-
         return (Color){ r, g, b, 255 };
     } else {
         fprintf(stderr, "Invalid color format. Use R,G,B (e.g., 255,0,0)\n");
-        exit(EXIT_FAILURE);
+        return (Color){ 0, 255, 0, 255}; // just return green, it's the best color for this projector
     }
 }
 
@@ -273,10 +267,6 @@ Config ParseCommandLine(int argc, char *argv[]) {
                 break;
             case 'i':
                 conf.moveInterval = atof(optarg);
-                if (conf.moveInterval < 0.1f) {
-                    fprintf(stderr, "Move interval must be at least 0.1 seconds\n");
-                    exit(EXIT_FAILURE);
-                }
                 break;
             case 'b':
                 conf.borderSize = atoi(optarg);
