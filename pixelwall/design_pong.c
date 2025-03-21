@@ -27,7 +27,7 @@ static PongConf defaultConf = {
     .paddle_len = 1,
     .margin = 1,
     .paddle_color = WHITE,
-    .ball_color = RED,
+    .ball_color = GREEN,
 };
 
 typedef struct {
