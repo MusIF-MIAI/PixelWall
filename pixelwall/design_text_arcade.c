@@ -43,7 +43,7 @@ static void ParseOptions(TextConf *conf, int argc, char *argv[]) {
     
     while ((opt = getopt(argc, argv, ":t:f:T:d:")) != -1) {
         switch (opt) {
-            case 't': conf->text = optarg; break;
+            case 't': conf->text = strdup(optarg); break;
             case 'f': conf->fontSize = atoi(optarg); break;
             case 'T': conf->color = ParseColor(optarg); break;
             case 'd': conf->direction = ParseDirection(optarg); break;
