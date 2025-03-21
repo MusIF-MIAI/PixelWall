@@ -301,6 +301,12 @@ Config ParseCommandLine(int argc, char *argv[]) {
     return conf;
 }
 
+void *DesignCreate(Design *design, Grid *grid, int argc, char **argv) {
+    void *data = design->Create(grid, argc, argv);
+    optind = 1;
+    return data;
+}
+
 // Main game loop
 int main(int argc, char *argv[]) {
     Grid *grid = &theGrid;
@@ -317,7 +323,7 @@ int main(int argc, char *argv[]) {
     Design *design = designs[conf.designIndex];
 
     printf("Starting design: %s\n", design->name);
-    void *data = design->Create(grid, argc, argv);
+    void *data = DesignCreate(design, grid, argc, argv);
 
     float changeTimer = conf.changeTimer;
     float timer = 0;
@@ -384,7 +390,7 @@ int main(int argc, char *argv[]) {
             printf("Switching to design: %s\n", design->name);
             GridFillColor(grid, grid->conf.backgroundColor);
             GridFillData(grid, 0);
-            data = design->Create(grid, argc, argv);
+            data = DesignCreate(design, grid, argc, argv);
             changeDesign = false;
         }
 
