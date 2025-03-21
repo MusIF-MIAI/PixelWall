@@ -108,6 +108,11 @@ void DrawPixelGrid(const Grid *grid) {
             }
 
             Color cellColor = GridGetColor(grid, pos);
+
+            if (grid->tint) {
+                cellColor = ColorTint(cellColor, GREEN);
+            }
+
             DrawRectangle(x, y, cellWidthNoBorder, cellHeightNoBorder, cellColor);
 
             if (grid->conf.showData)
@@ -131,6 +136,7 @@ void GridInitialize(Grid *grid, Config conf) {
     grid->conf = conf;
     grid->rows = conf.rows;
     grid->cols = conf.cols;
+    grid->tint = false;
 
     // Allocate memory for rows
     grid->pixels = (Pixel **)malloc(grid->rows * sizeof(Pixel *));
@@ -353,6 +359,10 @@ int main(int argc, char *argv[]) {
 
         if (IsKeyPressed(KEY_T)) {
             showTimer = !showTimer;
+        }
+
+        if (IsKeyPressed(KEY_V)) {
+            grid->tint = !grid->tint;
         }
 
         if (IsKeyPressed(KEY_PERIOD) || changeForTimeout) {

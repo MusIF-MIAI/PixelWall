@@ -62,6 +62,7 @@ typedef struct {
     int rows;
     int cols;
     Pixel **pixels;
+    bool tint;
 } Grid;
 
 typedef struct {
