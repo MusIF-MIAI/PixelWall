@@ -29,7 +29,7 @@ static CM5Conf defaultConf = {
     .chance = 5,
     .direction = HORIZONTAL,
     .offColor = BLACK,
-    .onColor = (Color) { 200, 10, 5, 255 },
+    .onColor = (Color) { 100, 255, 5, 255 },
 };
 
 static void PrintHelp() {
