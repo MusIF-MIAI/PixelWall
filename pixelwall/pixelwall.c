@@ -199,7 +199,7 @@ void PrintHelp(int argc, char *argv[]) {
     printf("  -H <height>      Set window height (default: %d)\n", defaultConf.windowHeight);
     printf("  -F               Flip horizontally\n");
     printf("  -f <rate>        Set frame rate (default: %d)\n", defaultConf.frameRate);
-    printf("  -i <interval>    Set move interval in seconds (default: %.1f)\n", defaultConf.moveInterval);
+    printf("  -i <interval>    Set move interval in seconds (default: %.1f). Use 0 to disable it.\n", defaultConf.moveInterval);
     printf("  -b <size>        Set border size (default: %d)\n", defaultConf.borderSize);
     printf("  -T <seconds>     Change design every <seconds> (default: %d)\n", (int)defaultConf.changeTimer);
     printf("  -h               Show this help message\n");
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
     while (!WindowShouldClose()) {
         changeTimer -= GetFrameTime();
 
-        if (changeTimer <= 0) {
+        if (conf.changeTimer !=0 && changeTimer <= 0 ) {
             changeTimer = conf.changeTimer;
             changeForTimeout = true;
         }
