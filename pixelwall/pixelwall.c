@@ -31,7 +31,7 @@ Config defaultConf = {
     .showData = false,
     .designIndex = 0,
     .horizontalFlip = false,
-    .changeTimer = 5 * 60,
+    .changeTimer = 0,
 };
 
 #define MAX_COLOR_VALUE 255
@@ -199,8 +199,8 @@ void PrintHelp(int argc, char *argv[]) {
     printf("  -H <height>      Set window height (default: %d)\n", defaultConf.windowHeight);
     printf("  -F               Flip horizontally\n");
     printf("  -f <rate>        Set frame rate (default: %d)\n", defaultConf.frameRate);
-    printf("  -i <interval>    Set move interval in seconds (default: %.1f). Use 0 to disable it.\n", defaultConf.moveInterval);
-    printf("  -b <size>        Set border size (default: %d)\n", defaultConf.borderSize);
+    printf("  -i <interval>    Set move interval in seconds (default: %.1f)\n", defaultConf.moveInterval);
+    printf("  -b <size>        Set border size (default: %d). Use 0 to disable it\n", defaultConf.borderSize);
     printf("  -T <seconds>     Change design every <seconds> (default: %d)\n", (int)defaultConf.changeTimer);
     printf("  -h               Show this help message\n");
 
