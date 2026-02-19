@@ -19,7 +19,7 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 #define BRICK_ROWS 3
 #define BRICK_COLS 11
 #define PADDLE_ROW 14
-#define PADDLE_HALF 2
+#define DEFAULT_PADDLE_HALF 1
 
 typedef struct {
     Color color;
@@ -27,6 +27,7 @@ typedef struct {
     Color row_colors[BRICK_ROWS];
     Color ball_color;
     Color paddle_color;
+    int paddle_half;
     Pos ball;
     Pos direction;
     int paddle_x;
@@ -69,12 +70,13 @@ static void PrintHelp() {
     printf("  -K <color>       Brick row 3 color (default: 85,255,255)\n");
     printf("  -L <color>       Ball color (default: 255,255,85)\n");
     printf("  -P <color>       Paddle color (default: 255,255,255)\n");
+    printf("  -S <size>        Paddle size in pixels (default: %d)\n", DEFAULT_PADDLE_HALF * 2 + 1);
 }
 
 static void ParseOptions(BreakoutData *bd, int argc, char *argv[]) {
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:CR:G:K:L:P:")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:CR:G:K:L:P:S:")) != -1) {
         switch (opt) {
             case 'C': bd->colorful = true; break;
             case 'R': bd->row_colors[0] = ParseColor(optarg); break;
@@ -82,6 +84,12 @@ static void ParseOptions(BreakoutData *bd, int argc, char *argv[]) {
             case 'K': bd->row_colors[2] = ParseColor(optarg); break;
             case 'L': bd->ball_color = ParseColor(optarg); break;
             case 'P': bd->paddle_color = ParseColor(optarg); break;
+            case 'S': {
+                int size = atoi(optarg);
+                if (size < 1) size = 1;
+                bd->paddle_half = (size - 1) / 2;
+                break;
+            }
         }
     }
 }
@@ -98,6 +106,7 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
     bd->row_colors[2] = (Color){85, 255, 255, 255};   // CGA Light Cyan
     bd->ball_color = (Color){255, 255, 85, 255};       // CGA Yellow
     bd->paddle_color = (Color){255, 255, 255, 255};    // White
+    bd->paddle_half = DEFAULT_PADDLE_HALF;
 
     ParseOptions(bd, argc, argv);
     ResetBricks(bd);
@@ -144,7 +153,7 @@ static void UpdateFrame(Grid *grid, void *data) {
 
     // Paddle collision
     if (ny == PADDLE_ROW) {
-        if (nx >= bd->paddle_x - PADDLE_HALF && nx <= bd->paddle_x + PADDLE_HALF) {
+        if (nx >= bd->paddle_x - bd->paddle_half && nx <= bd->paddle_x + bd->paddle_half) {
             bd->direction.y = -1;
             ny = bd->ball.y + bd->direction.y;
         }
@@ -171,8 +180,8 @@ static void UpdateFrame(Grid *grid, void *data) {
     int target = bd->ball.x + jitter;
     if (bd->paddle_x < target) bd->paddle_x++;
     if (bd->paddle_x > target) bd->paddle_x--;
-    if (bd->paddle_x < PADDLE_HALF) bd->paddle_x = PADDLE_HALF;
-    if (bd->paddle_x > 21 - PADDLE_HALF) bd->paddle_x = 21 - PADDLE_HALF;
+    if (bd->paddle_x < bd->paddle_half) bd->paddle_x = bd->paddle_half;
+    if (bd->paddle_x > 21 - bd->paddle_half) bd->paddle_x = 21 - bd->paddle_half;
 
     // Draw bricks
     for (int r = 0; r < BRICK_ROWS; r++) {
@@ -188,7 +197,7 @@ static void UpdateFrame(Grid *grid, void *data) {
 
     // Draw paddle
     Color pc = bd->colorful ? bd->paddle_color : bd->color;
-    for (int i = -PADDLE_HALF; i <= PADDLE_HALF; i++) {
+    for (int i = -bd->paddle_half; i <= bd->paddle_half; i++) {
         GridSetColor(grid, (Pos){bd->paddle_x + i, PADDLE_ROW}, pc);
     }
 
