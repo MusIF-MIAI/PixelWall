@@ -385,12 +385,15 @@ int main(int argc, char *argv[]) {
         }
 
         if (changeDesign) {
-            design->Destroy(data);
+            if (data) design->Destroy(data);
             design = designs[conf.designIndex];
             printf("Switching to design: %s\n", design->name);
             GridFillColor(grid, grid->conf.backgroundColor);
             GridFillData(grid, 0);
             data = DesignCreate(design, grid, argc, argv);
+            if (!data) {
+                fprintf(stderr, "Failed to create design: %s, skipping\n", design->name);
+            }
             changeDesign = false;
         }
 
@@ -399,7 +402,7 @@ int main(int argc, char *argv[]) {
 
         if (timer >= grid->conf.moveInterval) {
             timer = 0;
-            design->UpdateFrame(grid, data);
+            if (data) design->UpdateFrame(grid, data);
         }
         
         // Draw game state
@@ -420,7 +423,7 @@ int main(int argc, char *argv[]) {
         EndDrawing();
     }
 
-    design->Destroy(data);
+    if (data) design->Destroy(data);
     GridCleanup(grid);
     CloseWindow();
     return 0;

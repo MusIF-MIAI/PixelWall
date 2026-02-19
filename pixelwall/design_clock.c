@@ -96,6 +96,11 @@ static void DrawColon(Grid *grid, int startCol, Color color, int sec) {
 }
 
 static void *Create(Grid *grid, int argc, char *argv[]) {
+    if (grid->cols != 22 || grid->rows != 16) {
+        fprintf(stderr, "clock: requires a 22x16 grid (got %dx%d)\n",
+                grid->cols, grid->rows);
+        return NULL;
+    }
     ClockConf *conf = (ClockConf *)malloc(sizeof(ClockConf));
     if (!conf) return NULL;
     *conf = defaultClockConf;
