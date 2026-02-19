@@ -28,7 +28,8 @@ OBJECTS = \
 	design_breakout.o        \
 	design_tetris.o          \
 	design_starfield.o       \
-	design_invaders.o
+	design_invaders.o        \
+	design_alien_march.o
 
 .PHONY: all
 all: $(PROGRAM)

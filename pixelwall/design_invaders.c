@@ -180,7 +180,7 @@ static void UpdateFrame(Grid *grid, void *data) {
             }
         }
     }
-bullet_done:
+bullet_done:;
 
     // Move enemy bullet
     if (id->ebullet_y >= 0) {
@@ -210,7 +210,7 @@ bullet_done:
             }
         }
     }
-fire_done:
+fire_done:;
 
     // AI player: move toward nearest enemy and fire
     int target = NearestEnemyCol(id);

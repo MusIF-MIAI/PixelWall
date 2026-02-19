@@ -92,6 +92,9 @@ Stars fly outward from center creating a warp speed effect. Use `-C` for brightn
 ### invaders
 Self-playing Space Invaders. Use `-C` for colored mode.
 
+### alien_march
+Animated Space Invader aliens scrolling across the screen like a marquee. Use `-C` for colored mode, `-R` to reverse direction, `-S <ticks>` to control speed.
+
 ### Examples
 
 ```bash
@@ -100,6 +103,8 @@ Self-playing Space Invaders. Use `-C` for colored mode.
 ./pixelwall -d starfield -C          # Starfield with brightness gradient
 ./pixelwall -d invaders -C           # Space Invaders with colors
 ./pixelwall -d breakout -C           # Breakout with colored bricks
+./pixelwall -d alien_march -C        # Animated aliens scrolling with colors
+./pixelwall -d alien_march -R -S 3   # Slow scroll to the right
 ./pixelwall -T 30                    # Cycle through all designs every 30s
 ```
 
