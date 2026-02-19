@@ -59,49 +59,77 @@ make clean            # Remove build artifacts
 ### snake
 Snake animation that moves around the grid.
 
+![snake](gifs/snake.gif)
+
 ### random_pixels
 Random colored pixels.
+
+![random_pixels](gifs/random_pixels.gif)
 
 ### text
 Scrolling text display.
 
+![text](gifs/text.gif)
+
 ### pong
 Self-playing Pong game.
+
+![pong](gifs/pong.gif)
 
 ### life
 Conway's Game of Life.
 
+![life](gifs/life.gif)
+
 ### cm5
 CM5 blinking lights animation.
+
+![cm5](gifs/cm5.gif)
 
 ### text_arcade
 Arcade-style scrolling text.
 
+![text_arcade](gifs/text_arcade.gif)
+
 ### clock
 Digital clock with seconds marker.
 
+![clock](gifs/clock.gif)
+
 ### breakout
 Self-playing Breakout game. Use `-C` for colored mode.
+
+![breakout](gifs/breakout.gif) ![breakout -C](gifs/breakout_color.gif)
 
 ### tetris
 Self-playing Tetris with AI placement. Use `-C` for colored mode with per-piece colors.
 Color options: `-I` I-piece, `-Q` O-piece, `-K` T-piece, `-S` S-piece, `-Z` Z-piece, `-L` L-piece, `-J` J-piece, `-W` border.
 
+![tetris](gifs/tetris.gif) ![tetris -C](gifs/tetris_color.gif)
+
 ### starfield
 Stars fly outward from center creating a warp speed effect. Use `-C` for brightness gradient.
 Color options: `-D` dim color near center, `-R` bright color at edges.
+
+![starfield](gifs/starfield.gif) ![starfield -C](gifs/starfield_color.gif)
 
 ### invaders
 Self-playing Space Invaders. Use `-C` for colored mode.
 Color options: `-E` enemies, `-P` player, `-A` player bullet, `-K` enemy bullet.
 
+![invaders](gifs/invaders.gif) ![invaders -C](gifs/invaders_color.gif)
+
 ### alien_march
 Animated Space Invader aliens scrolling across the screen like a marquee. Use `-C` for colored mode, `-R` to reverse direction, `-S <ticks>` to control scroll speed (default: 4), `-N <ticks>` to control animation speed (default: 1).
 Color options: `-A` alien 1, `-G` alien 2, `-K` alien 3.
 
+![alien_march](gifs/alien_march.gif) ![alien_march -C](gifs/alien_march_color.gif)
+
 ### pacman_march
 Classic Pac-Man intermission: ghosts chase Pac-Man off screen, then Pac-Man chases scared (blue) ghosts back. Use `-C` for colored mode, `-S <ticks>` for scroll speed (default: 4), `-N <ticks>` for animation speed (default: 1).
 Color options: `-P` Pac-Man, `-G` ghost 1, `-K` ghost 2, `-E` scared ghost.
+
+![pacman_march](gifs/pacman_march.gif) ![pacman_march -C](gifs/pacman_march_color.gif)
 
 ### Examples
 
