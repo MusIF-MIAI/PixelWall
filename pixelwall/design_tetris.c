@@ -41,7 +41,7 @@ static const uint16_t pieces[NUM_PIECES][4] = {
     { 0x0E20, 0x44C0, 0x8E00, 0xC880 },
 };
 
-static const Color piece_colors[NUM_PIECES] = {
+static const Color default_piece_colors[NUM_PIECES] = {
     {85, 255, 255, 255},   // I - Cyan
     {255, 255, 85, 255},   // O - Yellow
     {255, 85, 255, 255},   // T - Magenta
@@ -66,6 +66,8 @@ typedef struct {
     int target_x, target_rot;
     bool colorful;
     Color color;
+    Color piece_colors[NUM_PIECES];
+    Color border_color;
 } TetrisData;
 
 static bool Collides(TetrisData *td, int type, int rot, int px, int py) {
@@ -187,6 +189,14 @@ static void ClearRows(TetrisData *td) {
 
 static void PrintHelp() {
     printf("  -C               Enable colored mode\n");
+    printf("  -I <color>       I-piece color (R,G,B, default: 85,255,255)\n");
+    printf("  -O <color>       O-piece color (R,G,B, default: 255,255,85)\n");
+    printf("  -S <color>       S-piece color (R,G,B, default: 85,255,85)\n");
+    printf("  -Z <color>       Z-piece color (R,G,B, default: 255,85,85)\n");
+    printf("  -L <color>       L-piece color (R,G,B, default: 255,170,0)\n");
+    printf("  -J <color>       J-piece color (R,G,B, default: 85,85,255)\n");
+    printf("  -K <color>       T-piece color (R,G,B, default: 255,85,255)\n");
+    printf("  -B <color>       Border color (R,G,B, default: 170,170,170)\n");
 }
 
 static void *Create(Grid *grid, int argc, char *argv[]) {
@@ -196,12 +206,22 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
 
     td->color = GREEN;
     td->colorful = false;
+    memcpy(td->piece_colors, default_piece_colors, sizeof(td->piece_colors));
+    td->border_color = (Color){170, 170, 170, 255};
 
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:C")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:CI:O:S:Z:L:J:K:B:")) != -1) {
         switch (opt) {
             case 'C': td->colorful = true; break;
+            case 'I': td->piece_colors[0] = ParseColor(optarg); break;
+            case 'O': td->piece_colors[1] = ParseColor(optarg); break;
+            case 'K': td->piece_colors[2] = ParseColor(optarg); break;
+            case 'S': td->piece_colors[3] = ParseColor(optarg); break;
+            case 'Z': td->piece_colors[4] = ParseColor(optarg); break;
+            case 'L': td->piece_colors[5] = ParseColor(optarg); break;
+            case 'J': td->piece_colors[6] = ParseColor(optarg); break;
+            case 'B': td->border_color = ParseColor(optarg); break;
         }
     }
 
@@ -265,14 +285,14 @@ static void UpdateFrame(Grid *grid, void *data) {
     for (int r = 0; r < FIELD_H; r++) {
         for (int c = 0; c < FIELD_W; c++) {
             if (td->field[r][c]) {
-                Color col = td->colorful ? piece_colors[td->field_color[r][c]] : td->color;
+                Color col = td->colorful ? td->piece_colors[td->field_color[r][c]] : td->color;
                 GridSetColor(grid, (Pos){FIELD_X + c, r}, col);
             }
         }
     }
 
     // Draw current piece
-    Color pc = td->colorful ? piece_colors[td->piece] : td->color;
+    Color pc = td->colorful ? td->piece_colors[td->piece] : td->color;
     for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 4; c++) {
             if (!PieceCell(td->piece, td->rotation, r, c)) continue;
@@ -284,7 +304,7 @@ static void UpdateFrame(Grid *grid, void *data) {
     }
 
     // Draw field borders
-    Color border = td->colorful ? (Color){170, 170, 170, 255} : td->color;
+    Color border = td->colorful ? td->border_color : td->color;
     for (int r = 0; r < FIELD_H; r++) {
         GridSetColor(grid, (Pos){FIELD_X - 1, r}, border);
         GridSetColor(grid, (Pos){FIELD_X + FIELD_W, r}, border);

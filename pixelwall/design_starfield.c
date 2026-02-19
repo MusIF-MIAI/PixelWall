@@ -32,6 +32,8 @@ typedef struct {
     Star stars[MAX_STARS];
     bool colorful;
     Color color;
+    Color dim_color;
+    Color bright_color;
     float cx, cy;
 } StarfieldData;
 
@@ -51,6 +53,8 @@ static void SpawnStar(StarfieldData *sd) {
 
 static void PrintHelp() {
     printf("  -C               Enable colored mode (brightness varies by distance)\n");
+    printf("  -D <color>       Dim star color near center (R,G,B, default: 80,80,80)\n");
+    printf("  -B <color>       Bright star color at edges (R,G,B, default: 255,255,255)\n");
 }
 
 static void *Create(Grid *grid, int argc, char *argv[]) {
@@ -59,14 +63,18 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
 
     sd->color = GREEN;
     sd->colorful = false;
+    sd->dim_color = (Color){80, 80, 80, 255};
+    sd->bright_color = (Color){255, 255, 255, 255};
     sd->cx = grid->cols / 2.0f;
     sd->cy = grid->rows / 2.0f;
 
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:C")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:CD:B:")) != -1) {
         switch (opt) {
             case 'C': sd->colorful = true; break;
+            case 'D': sd->dim_color = ParseColor(optarg); break;
+            case 'B': sd->bright_color = ParseColor(optarg); break;
         }
     }
 
@@ -104,10 +112,14 @@ static void UpdateFrame(Grid *grid, void *data) {
             float dx = s->x - sd->cx;
             float dy = s->y - sd->cy;
             float dist = sqrtf(dx * dx + dy * dy);
-            float bright = dist / max_dist;
-            if (bright > 1.0f) bright = 1.0f;
-            unsigned char v = (unsigned char)(80 + bright * 175);
-            col = (Color){v, v, v, 255};
+            float t = dist / max_dist;
+            if (t > 1.0f) t = 1.0f;
+            col = (Color){
+                (unsigned char)(sd->dim_color.r + t * (sd->bright_color.r - sd->dim_color.r)),
+                (unsigned char)(sd->dim_color.g + t * (sd->bright_color.g - sd->dim_color.g)),
+                (unsigned char)(sd->dim_color.b + t * (sd->bright_color.b - sd->dim_color.b)),
+                255
+            };
         } else {
             col = sd->color;
         }

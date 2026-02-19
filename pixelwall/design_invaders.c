@@ -60,6 +60,10 @@ static int EnemyGridCol(int c) {
 
 static void PrintHelp() {
     printf("  -C               Enable colored mode\n");
+    printf("  -E <color>       Enemy color (R,G,B, default: 255,85,85)\n");
+    printf("  -P <color>       Player color (R,G,B, default: 85,255,85)\n");
+    printf("  -B <color>       Player bullet color (R,G,B, default: 255,255,85)\n");
+    printf("  -K <color>       Enemy bullet color (R,G,B, default: 255,85,255)\n");
 }
 
 static void *Create(Grid *grid, int argc, char *argv[]) {
@@ -77,9 +81,13 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
 
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:C")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:CE:P:B:K:")) != -1) {
         switch (opt) {
             case 'C': id->colorful = true; break;
+            case 'E': id->enemy_color = ParseColor(optarg); break;
+            case 'P': id->player_color = ParseColor(optarg); break;
+            case 'B': id->bullet_color = ParseColor(optarg); break;
+            case 'K': id->ebullet_color = ParseColor(optarg); break;
         }
     }
 
