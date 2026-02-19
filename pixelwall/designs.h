@@ -27,6 +27,9 @@ extern Design cm5Design;
 extern Design arcadeDesign;
 extern Design clockDesign;
 extern Design breakoutDesign;
+extern Design tetrisDesign;
+extern Design starfieldDesign;
+extern Design invadersDesign;
 
 Design *designs[] = {
     &snakeDesign,
@@ -38,4 +41,7 @@ Design *designs[] = {
     &arcadeDesign,
     &clockDesign,
     &breakoutDesign,
+    &tetrisDesign,
+    &starfieldDesign,
+    &invadersDesign,
 };
