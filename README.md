@@ -85,18 +85,23 @@ Self-playing Breakout game. Use `-C` for colored mode.
 
 ### tetris
 Self-playing Tetris with AI placement. Use `-C` for colored mode with per-piece colors.
+Color options: `-I` I-piece, `-Q` O-piece, `-K` T-piece, `-S` S-piece, `-Z` Z-piece, `-L` L-piece, `-J` J-piece, `-W` border.
 
 ### starfield
 Stars fly outward from center creating a warp speed effect. Use `-C` for brightness gradient.
+Color options: `-D` dim color near center, `-R` bright color at edges.
 
 ### invaders
 Self-playing Space Invaders. Use `-C` for colored mode.
+Color options: `-E` enemies, `-P` player, `-A` player bullet, `-K` enemy bullet.
 
 ### alien_march
 Animated Space Invader aliens scrolling across the screen like a marquee. Use `-C` for colored mode, `-R` to reverse direction, `-S <ticks>` to control scroll speed (default: 4), `-N <ticks>` to control animation speed (default: 1).
+Color options: `-A` alien 1, `-G` alien 2, `-K` alien 3.
 
 ### pacman_march
 Classic Pac-Man intermission: ghosts chase Pac-Man off screen, then Pac-Man chases scared (blue) ghosts back. Use `-C` for colored mode, `-S <ticks>` for scroll speed (default: 4), `-N <ticks>` for animation speed (default: 1).
+Color options: `-P` Pac-Man, `-G` ghost 1, `-K` ghost 2, `-E` scared ghost.
 
 ### Examples
 
