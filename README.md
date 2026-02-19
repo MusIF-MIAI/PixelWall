@@ -96,7 +96,7 @@ Self-playing Space Invaders. Use `-C` for colored mode.
 Animated Space Invader aliens scrolling across the screen like a marquee. Use `-C` for colored mode, `-R` to reverse direction, `-S <ticks>` to control scroll speed (default: 4), `-N <ticks>` to control animation speed (default: 1).
 
 ### pacman_march
-Pac-Man chased by ghosts scrolling across the screen with dots. Use `-C` for colored mode, `-R` to reverse direction, `-S <ticks>` for scroll speed (default: 4), `-N <ticks>` for animation speed (default: 1).
+Classic Pac-Man intermission: ghosts chase Pac-Man off screen, then Pac-Man chases scared (blue) ghosts back. Use `-C` for colored mode, `-S <ticks>` for scroll speed (default: 4), `-N <ticks>` for animation speed (default: 1).
 
 ### Examples
 

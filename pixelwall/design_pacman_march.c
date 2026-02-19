@@ -20,11 +20,37 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 #define SPRITE_W 7
 #define SPRITE_H 7
 #define NUM_FRAMES 2
+#define NUM_GHOSTS 2
+#define SPACING 9
 #define DEFAULT_SPEED 4
 #define DEFAULT_ANIM_SPEED 1
 
-// Pac-Man: 2 frames (mouth open / mouth closed)
-static const uint8_t pacman[NUM_FRAMES][SPRITE_H] = {
+// Pac-Man facing left: 2 frames
+static const uint8_t pacman_left[NUM_FRAMES][SPRITE_H] = {
+    // Frame 0 - mouth open
+    {
+        0x1C, // ..###..
+        0x3E, // .#####.
+        0x1F, // ..#####
+        0x07, // ....###
+        0x1F, // ..#####
+        0x3E, // .#####.
+        0x1C, // ..###..
+    },
+    // Frame 1 - mouth closing
+    {
+        0x1C, // ..###..
+        0x3E, // .#####.
+        0x3F, // .######
+        0x7F, // #######
+        0x3F, // .######
+        0x3E, // .#####.
+        0x1C, // ..###..
+    },
+};
+
+// Pac-Man facing right: 2 frames
+static const uint8_t pacman_right[NUM_FRAMES][SPRITE_H] = {
     // Frame 0 - mouth open
     {
         0x1C, // ..###..
@@ -47,9 +73,8 @@ static const uint8_t pacman[NUM_FRAMES][SPRITE_H] = {
     },
 };
 
-// Ghost: 2 frames (legs alternate)
-static const uint8_t ghost[NUM_FRAMES][SPRITE_H] = {
-    // Frame 0
+// Normal ghost: 2 frames (legs alternate)
+static const uint8_t ghost_normal[NUM_FRAMES][SPRITE_H] = {
     {
         0x1C, // ..###..
         0x3E, // .#####.
@@ -59,7 +84,6 @@ static const uint8_t ghost[NUM_FRAMES][SPRITE_H] = {
         0x7F, // #######
         0x55, // #.#.#.#
     },
-    // Frame 1
     {
         0x1C, // ..###..
         0x3E, // .#####.
@@ -71,23 +95,39 @@ static const uint8_t ghost[NUM_FRAMES][SPRITE_H] = {
     },
 };
 
-// Dot: small pellet centered in a 3-wide space (only middle row has a pixel)
-#define DOT_W 3
-#define DOT_H 7
+// Scared ghost (blue): 2 frames
+static const uint8_t ghost_scared[NUM_FRAMES][SPRITE_H] = {
+    {
+        0x1C, // ..###..
+        0x3E, // .#####.
+        0x55, // #.#.#.#
+        0x7F, // #######
+        0x6B, // ##.#.##
+        0x7F, // #######
+        0x55, // #.#.#.#
+    },
+    {
+        0x1C, // ..###..
+        0x3E, // .#####.
+        0x55, // #.#.#.#
+        0x7F, // #######
+        0x6B, // ##.#.##
+        0x7F, // #######
+        0x2A, // .#.#.#.
+    },
+};
 
-// Pattern layout:
-// [pacman 7] [gap 2] [dot 3] [dot 3] [dot 3] [ghost 7] [gap 2] [ghost 7] [gap 2]
-// Total: 7 + 2 + 3 + 3 + 3 + 7 + 2 + 7 + 2 = 36
-
-#define NUM_ELEMENTS 9
-static const int element_widths[NUM_ELEMENTS] = { 7, 2, 3, 3, 3, 7, 2, 7, 2 };
-// Element types: 0=pacman, 1=gap, 2=dot, 3=ghost
-static const int element_types[NUM_ELEMENTS] = { 0, 1, 2, 2, 2, 3, 1, 3, 1 };
-#define TOTAL_PATTERN_W 36
+// Phase 0: ghosts chase pac-man, all moving left
+//   positions: pacman at x, ghost0 at x+SPACING, ghost1 at x+2*SPACING
+//   start: x = grid->cols, end: x + 2*SPACING + SPRITE_W < 0
+//
+// Phase 1: pac-man chases scared ghosts, all moving right
+//   positions: ghost0 at x, ghost1 at x+SPACING, pacman at x+2*SPACING
+//   start: x = -total_width, end: x > grid->cols
 
 typedef struct {
-    int offset;
-    int dir;
+    int x;
+    int phase;
     int tick;
     int speed;
     int anim_tick;
@@ -96,42 +136,50 @@ typedef struct {
     bool colorful;
     Color color;
     Color pacman_color;
-    Color ghost_colors[2];
-    Color dot_color;
+    Color ghost_colors[NUM_GHOSTS];
+    Color scared_color;
+    int cols;
 } PacmanMarchData;
 
 static void PrintHelp() {
     printf("  -C               Enable colored mode\n");
-    printf("  -R               Reverse direction (scroll right)\n");
     printf("  -S <ticks>       Scroll speed, higher = slower (default: %d)\n", DEFAULT_SPEED);
     printf("  -N <ticks>       Animation speed, higher = slower (default: %d)\n", DEFAULT_ANIM_SPEED);
     printf("  -P <color>       Pac-Man color (R,G,B, default: 255,255,85)\n");
     printf("  -G <color>       Ghost 1 color (R,G,B, default: 255,85,85)\n");
-    printf("  -K <color>       Ghost 2 color (R,G,B, default: 85,255,255)\n");
-    printf("  -E <color>       Dot color (R,G,B, default: 255,185,80)\n");
+    printf("  -K <color>       Ghost 2 color (R,G,B, default: 255,85,255)\n");
+    printf("  -E <color>       Scared ghost color (R,G,B, default: 85,85,255)\n");
+}
+
+static void StartPhase(PacmanMarchData *pd, int phase) {
+    pd->phase = phase;
+    int total = 2 * SPACING + SPRITE_W;
+    if (phase == 0) {
+        pd->x = pd->cols;
+    } else {
+        pd->x = -total;
+    }
 }
 
 static void *Create(Grid *grid, int argc, char *argv[]) {
-    (void)grid;
     PacmanMarchData *pd = calloc(1, sizeof(PacmanMarchData));
     if (!pd) return NULL;
 
     pd->color = GREEN;
-    pd->dir = 1;
     pd->speed = DEFAULT_SPEED;
     pd->anim_speed = DEFAULT_ANIM_SPEED;
     pd->colorful = false;
     pd->pacman_color = (Color){255, 255, 85, 255};
     pd->ghost_colors[0] = (Color){255, 85, 85, 255};
-    pd->ghost_colors[1] = (Color){85, 255, 255, 255};
-    pd->dot_color = (Color){255, 185, 80, 255};
+    pd->ghost_colors[1] = (Color){255, 85, 255, 255};
+    pd->scared_color = (Color){85, 85, 255, 255};
+    pd->cols = grid->cols;
 
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:CRS:N:P:G:K:E:")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:CS:N:P:G:K:E:")) != -1) {
         switch (opt) {
             case 'C': pd->colorful = true; break;
-            case 'R': pd->dir = -1; break;
             case 'S':
                 pd->speed = atoi(optarg);
                 if (pd->speed < 1) pd->speed = 1;
@@ -143,59 +191,24 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
             case 'P': pd->pacman_color = ParseColor(optarg); break;
             case 'G': pd->ghost_colors[0] = ParseColor(optarg); break;
             case 'K': pd->ghost_colors[1] = ParseColor(optarg); break;
-            case 'E': pd->dot_color = ParseColor(optarg); break;
+            case 'E': pd->scared_color = ParseColor(optarg); break;
         }
     }
 
+    StartPhase(pd, 0);
     return pd;
 }
 
-static void DrawColumn(PacmanMarchData *pd, Grid *grid, int screen_x, int pattern_col,
-                        int start_row, int frame) {
-    // Find which element this column belongs to
-    int col = pattern_col;
-    int elem = 0;
-    while (elem < NUM_ELEMENTS && col >= element_widths[elem]) {
-        col -= element_widths[elem];
-        elem++;
-    }
-    if (elem >= NUM_ELEMENTS) return;
-
-    int type = element_types[elem];
-
-    if (type == 1) return; // gap
-
-    if (type == 2) {
-        // Dot: single pixel in the center (col 1, row 3)
-        if (col == 1) {
-            int gy = start_row + SPRITE_H / 2;
-            if (gy >= 0 && gy < grid->rows) {
-                Color c = pd->colorful ? pd->dot_color : pd->color;
-                GridSetColor(grid, (Pos){screen_x, gy}, c);
+static void DrawSprite(Grid *grid, const uint8_t *sprite, int sx, int start_row, Color color) {
+    for (int c = 0; c < SPRITE_W; c++) {
+        int gx = sx + c;
+        if (gx < 0 || gx >= grid->cols) continue;
+        for (int r = 0; r < SPRITE_H; r++) {
+            int gy = start_row + r;
+            if (gy < 0 || gy >= grid->rows) continue;
+            if ((sprite[r] >> (SPRITE_W - 1 - c)) & 1) {
+                GridSetColor(grid, (Pos){gx, gy}, color);
             }
-        }
-        return;
-    }
-
-    const uint8_t *sprite;
-    Color c;
-
-    if (type == 0) {
-        // Pac-Man
-        sprite = pacman[frame];
-        c = pd->colorful ? pd->pacman_color : pd->color;
-    } else {
-        // Ghost - figure out which one (first or second ghost in pattern)
-        int ghost_idx = (elem == 5) ? 0 : 1;
-        sprite = ghost[frame];
-        c = pd->colorful ? pd->ghost_colors[ghost_idx] : pd->color;
-    }
-
-    for (int r = 0; r < SPRITE_H; r++) {
-        int gy = start_row + r;
-        if (gy < 0 || gy >= grid->rows) continue;
-        if ((sprite[r] >> (SPRITE_W - 1 - col)) & 1) {
-            GridSetColor(grid, (Pos){screen_x, gy}, c);
         }
     }
 }
@@ -207,18 +220,47 @@ static void UpdateFrame(Grid *grid, void *data) {
     GridFillColor(grid, bg);
 
     int start_row = (grid->rows - SPRITE_H) / 2;
+    int f = pd->frame;
 
-    for (int x = 0; x < grid->cols; x++) {
-        int pcol = ((x + pd->offset) % TOTAL_PATTERN_W + TOTAL_PATTERN_W) % TOTAL_PATTERN_W;
-        DrawColumn(pd, grid, x, pcol, start_row, pd->frame);
+    if (pd->phase == 0) {
+        // Ghosts chase Pac-Man, all moving left
+        // Pac-Man leads (leftmost), ghosts follow
+        Color pc = pd->colorful ? pd->pacman_color : pd->color;
+        DrawSprite(grid, pacman_left[f], pd->x, start_row, pc);
+        for (int i = 0; i < NUM_GHOSTS; i++) {
+            Color gc = pd->colorful ? pd->ghost_colors[i] : pd->color;
+            DrawSprite(grid, ghost_normal[f], pd->x + (i + 1) * SPACING, start_row, gc);
+        }
+    } else {
+        // Pac-Man chases scared ghosts, all moving right
+        // Ghosts lead (leftmost), Pac-Man follows
+        for (int i = 0; i < NUM_GHOSTS; i++) {
+            Color sc = pd->colorful ? pd->scared_color : pd->color;
+            DrawSprite(grid, ghost_scared[f], pd->x + i * SPACING, start_row, sc);
+        }
+        Color pc = pd->colorful ? pd->pacman_color : pd->color;
+        DrawSprite(grid, pacman_right[f], pd->x + NUM_GHOSTS * SPACING, start_row, pc);
     }
 
+    // Scroll
     pd->tick++;
     if (pd->tick >= pd->speed) {
         pd->tick = 0;
-        pd->offset += pd->dir;
+        int total = 2 * SPACING + SPRITE_W;
+        if (pd->phase == 0) {
+            pd->x--;
+            if (pd->x + total < 0) {
+                StartPhase(pd, 1);
+            }
+        } else {
+            pd->x++;
+            if (pd->x > pd->cols) {
+                StartPhase(pd, 0);
+            }
+        }
     }
 
+    // Animation
     pd->anim_tick++;
     if (pd->anim_tick >= pd->anim_speed) {
         pd->anim_tick = 0;
