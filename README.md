@@ -95,6 +95,9 @@ Self-playing Space Invaders. Use `-C` for colored mode.
 ### alien_march
 Animated Space Invader aliens scrolling across the screen like a marquee. Use `-C` for colored mode, `-R` to reverse direction, `-S <ticks>` to control scroll speed (default: 4), `-N <ticks>` to control animation speed (default: 1).
 
+### pacman_march
+Pac-Man chased by ghosts scrolling across the screen with dots. Use `-C` for colored mode, `-R` to reverse direction, `-S <ticks>` for scroll speed (default: 4), `-N <ticks>` for animation speed (default: 1).
+
 ### Examples
 
 ```bash
@@ -106,6 +109,7 @@ Animated Space Invader aliens scrolling across the screen like a marquee. Use `-
 ./pixelwall -d alien_march -C        # Animated aliens scrolling with colors
 ./pixelwall -d alien_march -R -S 6   # Slower scroll to the right
 ./pixelwall -d alien_march -S 2 -N 4 # Fast scroll, slow animation
+./pixelwall -d pacman_march -C       # Pac-Man with classic colors
 ./pixelwall -T 30                    # Cycle through all designs every 30s
 ```
 
