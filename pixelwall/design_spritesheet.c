@@ -155,9 +155,10 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
     if (anim_spec) {
         sd->frames = ParseFrameList(anim_spec, &sd->num_frames);
     } else {
-        sd->frames = malloc(sizeof(int));
-        sd->frames[0] = 0;
-        sd->num_frames = 1;
+        sd->num_frames = max_frames;
+        sd->frames = malloc(max_frames * sizeof(int));
+        for (int i = 0; i < max_frames; i++)
+            sd->frames[i] = i;
     }
 
     for (int i = 0; i < sd->num_frames; i++) {

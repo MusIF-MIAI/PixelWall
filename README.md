@@ -134,7 +134,7 @@ Color options: `-P` Pac-Man, `-G` ghost 1, `-K` ghost 2, `-E` scared ghost.
 ### spritesheet
 Load and animate sprite sheet images with 1:1 pixel rendering. Sprites are centered on the grid.
 
-Options: `-I <path>` image file (required), `-G <CxR>` grid layout, `-W <WxH>` frame size, `-A <list>` frame indices, `-N <ticks>` animation speed, `-P <XxY>` offset from top-left, `-S <XxY>` spacing between frames, `-Z <factor>` zoom, `-K` use top-left pixel as transparent key color, `-E <tolerance>` key color tolerance.
+Options: `-I <path>` image file (required), `-G <CxR>` grid layout, `-W <WxH>` frame size, `-A <list>` frame indices (default: all frames in order), `-N <ticks>` animation speed, `-P <XxY>` offset from top-left, `-S <XxY>` spacing between frames, `-Z <factor>` zoom, `-K` use top-left pixel as transparent key color, `-E <tolerance>` key color tolerance.
 
 ### Examples
 
