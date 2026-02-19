@@ -24,7 +24,8 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 #define PATTERN_W (SPRITE_W + SPRITE_GAP)
 #define TOTAL_PATTERN_W (NUM_SPRITES * PATTERN_W)
 #define NUM_FRAMES 2
-#define DEFAULT_SPEED 1
+#define DEFAULT_SPEED 4
+#define DEFAULT_ANIM_SPEED 1
 
 // 7-wide x 7-tall alien sprites, 2 animation frames each
 // bit 6 = leftmost pixel
@@ -117,7 +118,7 @@ static void PrintHelp() {
     printf("  -C               Enable colored mode\n");
     printf("  -R               Reverse direction (scroll right)\n");
     printf("  -S <ticks>       Scroll speed, higher = slower (default: %d)\n", DEFAULT_SPEED);
-    printf("  -N <ticks>       Animation speed, higher = slower (default: same as -S)\n");
+    printf("  -N <ticks>       Animation speed, higher = slower (default: %d)\n", DEFAULT_ANIM_SPEED);
     printf("  -A <color>       Alien 1 color (R,G,B, default: 255,85,85)\n");
     printf("  -G <color>       Alien 2 color (R,G,B, default: 85,255,255)\n");
     printf("  -K <color>       Alien 3 color (R,G,B, default: 255,255,85)\n");
@@ -131,7 +132,7 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
     ad->color = GREEN;
     ad->dir = 1;
     ad->speed = DEFAULT_SPEED;
-    ad->anim_speed = -1;
+    ad->anim_speed = DEFAULT_ANIM_SPEED;
     ad->colorful = false;
     ad->alien_colors[0] = (Color){255, 85, 85, 255};
     ad->alien_colors[1] = (Color){85, 255, 255, 255};
@@ -156,8 +157,6 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
             case 'K': ad->alien_colors[2] = ParseColor(optarg); break;
         }
     }
-
-    if (ad->anim_speed < 0) ad->anim_speed = ad->speed;
 
     return ad;
 }
