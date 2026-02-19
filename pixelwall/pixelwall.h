@@ -40,6 +40,7 @@ typedef struct {
     bool horizontalFlip;
     int designIndex;
     float changeTimer;
+    float exitTimer;
 } Config;
 
 typedef enum {

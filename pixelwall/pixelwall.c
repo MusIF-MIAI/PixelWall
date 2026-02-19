@@ -32,6 +32,7 @@ Config defaultConf = {
     .designIndex = 0,
     .horizontalFlip = false,
     .changeTimer = 0,
+    .exitTimer = 0,
 };
 
 #define MAX_COLOR_VALUE 255
@@ -202,6 +203,7 @@ void PrintHelp(int argc, char *argv[]) {
     printf("  -i <interval>    Set move interval in seconds (default: %.1f)\n", defaultConf.moveInterval);
     printf("  -b <size>        Set border size (default: %d). Use 0 to disable it\n", defaultConf.borderSize);
     printf("  -T <seconds>     Change design every <seconds> (default: %d)\n", (int)defaultConf.changeTimer);
+    printf("  -X <seconds>     Exit after <seconds> (default: 0 = never)\n");
     printf("  -h               Show this help message\n");
 
     printf("\n");
@@ -237,7 +239,7 @@ Color ParseColor(const char *string) {
 Config ParseCommandLine(int argc, char *argv[]) {
     int opt;
     Config conf = defaultConf;
-    while ((opt = getopt(argc, argv, ":d:r:c:w:H:Ff:b:B:O:T:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:r:c:w:H:Ff:b:B:O:T:X:h")) != -1) {
         switch (opt) {
             case 'd':
                 for (int i = 0; i < sizeof(designs) / sizeof(Design *); i++) {
@@ -286,6 +288,9 @@ Config ParseCommandLine(int argc, char *argv[]) {
                 break;
             case 'T':
                 conf.changeTimer = atof(optarg);
+                break;
+            case 'X':
+                conf.exitTimer = atof(optarg);
                 break;
             case 'h':
                 PrintHelp(argc, argv);
@@ -340,9 +345,16 @@ int main(int argc, char *argv[]) {
     fonts.charOffset = 32;
     fonts.count = fonts.image.height / fonts.size;
 
+    float exitTimer = conf.exitTimer;
+
     // Main game loop
     while (!WindowShouldClose()) {
         changeTimer -= GetFrameTime();
+
+        if (conf.exitTimer > 0) {
+            exitTimer -= GetFrameTime();
+            if (exitTimer <= 0) _exit(0);
+        }
 
         if (conf.changeTimer !=0 && changeTimer <= 0 ) {
             changeTimer = conf.changeTimer;
