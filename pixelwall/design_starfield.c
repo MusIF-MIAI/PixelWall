@@ -54,7 +54,7 @@ static void SpawnStar(StarfieldData *sd) {
 static void PrintHelp() {
     printf("  -C               Enable colored mode (brightness varies by distance)\n");
     printf("  -D <color>       Dim star color near center (R,G,B, default: 80,80,80)\n");
-    printf("  -B <color>       Bright star color at edges (R,G,B, default: 255,255,255)\n");
+    printf("  -R <color>       Bright star color at edges (R,G,B, default: 255,255,255)\n");
 }
 
 static void *Create(Grid *grid, int argc, char *argv[]) {
@@ -70,11 +70,11 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
 
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:CD:B:")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:CD:R:")) != -1) {
         switch (opt) {
             case 'C': sd->colorful = true; break;
             case 'D': sd->dim_color = ParseColor(optarg); break;
-            case 'B': sd->bright_color = ParseColor(optarg); break;
+            case 'R': sd->bright_color = ParseColor(optarg); break;
         }
     }
 
@@ -115,9 +115,9 @@ static void UpdateFrame(Grid *grid, void *data) {
             float t = dist / max_dist;
             if (t > 1.0f) t = 1.0f;
             col = (Color){
-                (unsigned char)(sd->dim_color.r + t * (sd->bright_color.r - sd->dim_color.r)),
-                (unsigned char)(sd->dim_color.g + t * (sd->bright_color.g - sd->dim_color.g)),
-                (unsigned char)(sd->dim_color.b + t * (sd->bright_color.b - sd->dim_color.b)),
+                (unsigned char)(sd->dim_color.r + t * ((int)sd->bright_color.r - (int)sd->dim_color.r)),
+                (unsigned char)(sd->dim_color.g + t * ((int)sd->bright_color.g - (int)sd->dim_color.g)),
+                (unsigned char)(sd->dim_color.b + t * ((int)sd->bright_color.b - (int)sd->dim_color.b)),
                 255
             };
         } else {

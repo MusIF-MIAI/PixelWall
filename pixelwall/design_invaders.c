@@ -23,7 +23,6 @@ TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
 #define PLAYER_ROW 14
 #define PLAYER_HALF 1
 #define MOVE_TICKS 6
-#define FIRE_TICKS 10
 
 typedef struct {
     bool enemies[ENEMY_ROWS][ENEMY_COLS];
@@ -62,7 +61,7 @@ static void PrintHelp() {
     printf("  -C               Enable colored mode\n");
     printf("  -E <color>       Enemy color (R,G,B, default: 255,85,85)\n");
     printf("  -P <color>       Player color (R,G,B, default: 85,255,85)\n");
-    printf("  -B <color>       Player bullet color (R,G,B, default: 255,255,85)\n");
+    printf("  -A <color>       Player bullet color (R,G,B, default: 255,255,85)\n");
     printf("  -K <color>       Enemy bullet color (R,G,B, default: 255,85,255)\n");
 }
 
@@ -81,12 +80,12 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
 
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:CE:P:B:K:")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:CE:P:A:K:")) != -1) {
         switch (opt) {
             case 'C': id->colorful = true; break;
             case 'E': id->enemy_color = ParseColor(optarg); break;
             case 'P': id->player_color = ParseColor(optarg); break;
-            case 'B': id->bullet_color = ParseColor(optarg); break;
+            case 'A': id->bullet_color = ParseColor(optarg); break;
             case 'K': id->ebullet_color = ParseColor(optarg); break;
         }
     }
@@ -186,7 +185,7 @@ bullet_done:
     // Move enemy bullet
     if (id->ebullet_y >= 0) {
         id->ebullet_y++;
-        if (id->ebullet_y > 15) {
+        if (id->ebullet_y >= grid->rows) {
             id->ebullet_y = -1;
         } else if (id->ebullet_y == PLAYER_ROW &&
                    id->ebullet_x >= id->player_x - PLAYER_HALF &&

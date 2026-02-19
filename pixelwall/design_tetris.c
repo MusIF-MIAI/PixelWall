@@ -190,13 +190,13 @@ static void ClearRows(TetrisData *td) {
 static void PrintHelp() {
     printf("  -C               Enable colored mode\n");
     printf("  -I <color>       I-piece color (R,G,B, default: 85,255,255)\n");
-    printf("  -O <color>       O-piece color (R,G,B, default: 255,255,85)\n");
+    printf("  -Q <color>       O-piece color (R,G,B, default: 255,255,85)\n");
     printf("  -S <color>       S-piece color (R,G,B, default: 85,255,85)\n");
     printf("  -Z <color>       Z-piece color (R,G,B, default: 255,85,85)\n");
     printf("  -L <color>       L-piece color (R,G,B, default: 255,170,0)\n");
     printf("  -J <color>       J-piece color (R,G,B, default: 85,85,255)\n");
     printf("  -K <color>       T-piece color (R,G,B, default: 255,85,255)\n");
-    printf("  -B <color>       Border color (R,G,B, default: 170,170,170)\n");
+    printf("  -W <color>       Border/wall color (R,G,B, default: 170,170,170)\n");
 }
 
 static void *Create(Grid *grid, int argc, char *argv[]) {
@@ -211,17 +211,17 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
 
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:CI:O:S:Z:L:J:K:B:")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:CI:Q:S:Z:L:J:K:W:")) != -1) {
         switch (opt) {
             case 'C': td->colorful = true; break;
             case 'I': td->piece_colors[0] = ParseColor(optarg); break;
-            case 'O': td->piece_colors[1] = ParseColor(optarg); break;
+            case 'Q': td->piece_colors[1] = ParseColor(optarg); break;
             case 'K': td->piece_colors[2] = ParseColor(optarg); break;
             case 'S': td->piece_colors[3] = ParseColor(optarg); break;
             case 'Z': td->piece_colors[4] = ParseColor(optarg); break;
             case 'L': td->piece_colors[5] = ParseColor(optarg); break;
             case 'J': td->piece_colors[6] = ParseColor(optarg); break;
-            case 'B': td->border_color = ParseColor(optarg); break;
+            case 'W': td->border_color = ParseColor(optarg); break;
         }
     }
 
