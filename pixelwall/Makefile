@@ -30,7 +30,8 @@ OBJECTS = \
 	design_starfield.o       \
 	design_invaders.o        \
 	design_alien_march.o     \
-	design_pacman_march.o
+	design_pacman_march.o        \
+	design_spritesheet.o
 
 .PHONY: all
 all: $(PROGRAM)

@@ -305,6 +305,10 @@ void *DesignCreate(Design *design, Grid *grid, int argc, char **argv) {
 
 // Main game loop
 int main(int argc, char *argv[]) {
+    // Save argv before getopt permutes it
+    char **argv_orig = malloc(argc * sizeof(char *));
+    for (int i = 0; i < argc; i++) argv_orig[i] = argv[i];
+
     Grid *grid = &theGrid;
     Config conf = ParseCommandLine(argc, argv);
 
@@ -319,7 +323,7 @@ int main(int argc, char *argv[]) {
     Design *design = designs[conf.designIndex];
 
     printf("Starting design: %s\n", design->name);
-    void *data = DesignCreate(design, grid, argc, argv);
+    void *data = DesignCreate(design, grid, argc, argv_orig);
 
     float changeTimer = conf.changeTimer;
     float timer = 0;
@@ -390,7 +394,7 @@ int main(int argc, char *argv[]) {
             printf("Switching to design: %s\n", design->name);
             GridFillColor(grid, grid->conf.backgroundColor);
             GridFillData(grid, 0);
-            data = DesignCreate(design, grid, argc, argv);
+            data = DesignCreate(design, grid, argc, argv_orig);
             if (!data) {
                 fprintf(stderr, "Failed to create design: %s, skipping\n", design->name);
             }
