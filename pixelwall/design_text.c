@@ -57,7 +57,7 @@ static void PrintHelp() {
 }
 
 static void *Create(Grid *grid, int argc, char *argv[]) {
-    TextState *state = (TextState *)malloc(sizeof(TextState));
+    TextState *state = (TextState *)calloc(1, sizeof(TextState));
     if (!state) return NULL;
 
     state->conf = defaultConf;
