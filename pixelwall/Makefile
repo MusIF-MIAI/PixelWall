@@ -24,7 +24,8 @@ OBJECTS = \
 	design_life.o            \
 	design_cm5.o             \
 	design_text_arcade.o     \
-	design_clock.o
+	design_clock.o           \
+	design_breakout.o
 
 .PHONY: all
 all: $(PROGRAM)

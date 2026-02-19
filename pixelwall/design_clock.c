@@ -57,7 +57,7 @@ static ClockConf defaultClockConf = {
 static void ParseOptions(ClockConf *conf, int argc, char *argv[]) {
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":T:S:")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:T:S:")) != -1) {
         switch (opt) {
             case 'T': conf->digitColor = ParseColor(optarg); break;
             case 'S': conf->markerColor = ParseColor(optarg); break;
