@@ -33,7 +33,7 @@ static void LifeReset(Grid *grid) {
 static void* LifeCreate(Grid *grid, int argc, char *argv[]) {
     srand(time(NULL));
     LifeReset(grid);
-    return NULL;
+    return grid;
 }
 
 static int CountLiveNeighbors(Grid *grid, int x, int y) {
