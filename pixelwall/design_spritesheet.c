@@ -25,6 +25,9 @@ typedef struct {
     int num_frames;
     int current_frame;
     int tick, anim_speed;
+    int offset_x, offset_y;
+    int spacing_x, spacing_y;
+    float zoom;
     bool use_key_color;
     Color key_color;
     int key_tolerance;
@@ -36,6 +39,9 @@ static void PrintHelp() {
     printf("  -W <WxH>         Sprite frame size in pixels (default: auto)\n");
     printf("  -A <list>        Frame indices to animate, comma-separated (default: 0)\n");
     printf("  -N <ticks>       Animation speed, higher = slower (default: 5)\n");
+    printf("  -P <XxY>         Offset from top-left corner in pixels (default: 0x0)\n");
+    printf("  -S <XxY>         Spacing between frames in pixels (default: 0x0)\n");
+    printf("  -Z <factor>      Zoom factor (default: 1.0)\n");
     printf("  -K               Use top-left pixel of sprite as transparent key color\n");
     printf("  -E <tolerance>   Key color tolerance for JPEG artifacts (default: 30)\n");
 }
@@ -69,6 +75,7 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
     sd->frame_w = 0;
     sd->frame_h = 0;
     sd->anim_speed = 5;
+    sd->zoom = 1.0f;
     sd->use_key_color = false;
     sd->key_tolerance = 30;
 
@@ -76,10 +83,12 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
     char *grid_spec = NULL;
     char *size_spec = NULL;
     char *anim_spec = NULL;
+    char *offset_spec = NULL;
+    char *spacing_spec = NULL;
 
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:I:G:W:A:N:KE:")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:I:G:W:A:N:KE:P:S:Z:")) != -1) {
         switch (opt) {
             case 'I': image_path = optarg; break;
             case 'G': grid_spec = optarg; break;
@@ -88,6 +97,9 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
             case 'N': sd->anim_speed = atoi(optarg); break;
             case 'K': sd->use_key_color = true; break;
             case 'E': sd->key_tolerance = atoi(optarg); break;
+            case 'P': offset_spec = optarg; break;
+            case 'S': spacing_spec = optarg; break;
+            case 'Z': sd->zoom = atof(optarg); break;
         }
     }
 
@@ -110,22 +122,32 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
         exit(1);
     }
 
+    if (offset_spec) {
+        sscanf(offset_spec, "%dx%d", &sd->offset_x, &sd->offset_y);
+    }
+    if (spacing_spec) {
+        sscanf(spacing_spec, "%dx%d", &sd->spacing_x, &sd->spacing_y);
+    }
+
     if (size_spec) {
         sscanf(size_spec, "%dx%d", &sd->frame_w, &sd->frame_h);
     } else {
-        sd->frame_w = sd->image.width / sd->grid_cols;
-        sd->frame_h = sd->image.height / sd->grid_rows;
+        sd->frame_w = (sd->image.width - sd->offset_x - sd->spacing_x * (sd->grid_cols - 1)) / sd->grid_cols;
+        sd->frame_h = (sd->image.height - sd->offset_y - sd->spacing_y * (sd->grid_rows - 1)) / sd->grid_rows;
     }
     if (sd->frame_w < 1 || sd->frame_h < 1) {
         fprintf(stderr, "spritesheet: invalid frame size %dx%d\n", sd->frame_w, sd->frame_h);
         exit(1);
     }
 
+
     int max_frames = sd->grid_cols * sd->grid_rows;
-    if (sd->grid_cols * sd->frame_w > sd->image.width ||
-        sd->grid_rows * sd->frame_h > sd->image.height) {
-        fprintf(stderr, "spritesheet: sprite grid (%dx%d frames of %dx%d) exceeds image size %dx%d\n",
+    int total_w = sd->offset_x + sd->grid_cols * sd->frame_w + (sd->grid_cols - 1) * sd->spacing_x;
+    int total_h = sd->offset_y + sd->grid_rows * sd->frame_h + (sd->grid_rows - 1) * sd->spacing_y;
+    if (total_w > sd->image.width || total_h > sd->image.height) {
+        fprintf(stderr, "spritesheet: sprite grid (%dx%d frames of %dx%d, offset %dx%d, spacing %dx%d) exceeds image size %dx%d\n",
                 sd->grid_cols, sd->grid_rows, sd->frame_w, sd->frame_h,
+                sd->offset_x, sd->offset_y, sd->spacing_x, sd->spacing_y,
                 sd->image.width, sd->image.height);
         exit(1);
     }
@@ -147,8 +169,10 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
     }
 
     if (sd->use_key_color) {
-        int fx = (sd->frames[0] % sd->grid_cols) * sd->frame_w;
-        int fy = (sd->frames[0] / sd->grid_cols) * sd->frame_h;
+        int col = sd->frames[0] % sd->grid_cols;
+        int row = sd->frames[0] / sd->grid_cols;
+        int fx = sd->offset_x + col * (sd->frame_w + sd->spacing_x);
+        int fy = sd->offset_y + row * (sd->frame_h + sd->spacing_y);
         sd->key_color = GetImageColor(sd->image, fx, fy);
     }
 
@@ -161,13 +185,24 @@ static void UpdateFrame(Grid *grid, void *data) {
     GridFillColor(grid, grid->conf.backgroundColor);
 
     int idx = sd->frames[sd->current_frame];
-    int fx = (idx % sd->grid_cols) * sd->frame_w;
-    int fy = (idx / sd->grid_cols) * sd->frame_h;
+    int col = idx % sd->grid_cols;
+    int row = idx / sd->grid_cols;
+    int fx = sd->offset_x + col * (sd->frame_w + sd->spacing_x);
+    int fy = sd->offset_y + row * (sd->frame_h + sd->spacing_y);
 
-    for (int gy = 0; gy < grid->rows; gy++) {
-        for (int gx = 0; gx < grid->cols; gx++) {
-            int px = gx * sd->frame_w / grid->cols;
-            int py = gy * sd->frame_h / grid->rows;
+    int draw_w = (int)(sd->frame_w * sd->zoom);
+    int draw_h = (int)(sd->frame_h * sd->zoom);
+    int ox = (grid->cols - draw_w) / 2;
+    int oy = (grid->rows - draw_h) / 2;
+    if (ox < 0) ox = 0;
+    if (oy < 0) oy = 0;
+
+    for (int gy = 0; gy < draw_h && gy + oy < grid->rows; gy++) {
+        for (int gx = 0; gx < draw_w && gx + ox < grid->cols; gx++) {
+            int px = (int)(gx / sd->zoom);
+            int py = (int)(gy / sd->zoom);
+            if (px >= sd->frame_w) px = sd->frame_w - 1;
+            if (py >= sd->frame_h) py = sd->frame_h - 1;
 
             Color col = GetImageColor(sd->image, fx + px, fy + py);
 
@@ -177,7 +212,7 @@ static void UpdateFrame(Grid *grid, void *data) {
                 abs(col.g - sd->key_color.g) <= sd->key_tolerance &&
                 abs(col.b - sd->key_color.b) <= sd->key_tolerance) continue;
 
-            GridSetColor(grid, (Pos){gx, gy}, col);
+            GridSetColor(grid, (Pos){gx + ox, gy + oy}, col);
         }
     }
 
