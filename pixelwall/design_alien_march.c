@@ -105,8 +105,9 @@ typedef struct {
     int dir;
     int tick;
     int speed;
+    int anim_tick;
+    int anim_speed;
     int frame;
-    int anim_counter;
     bool colorful;
     Color color;
     Color alien_colors[NUM_SPRITES];
@@ -116,6 +117,7 @@ static void PrintHelp() {
     printf("  -C               Enable colored mode\n");
     printf("  -R               Reverse direction (scroll right)\n");
     printf("  -S <ticks>       Scroll speed, higher = slower (default: %d)\n", DEFAULT_SPEED);
+    printf("  -N <ticks>       Animation speed, higher = slower (default: same as -S)\n");
     printf("  -A <color>       Alien 1 color (R,G,B, default: 255,85,85)\n");
     printf("  -G <color>       Alien 2 color (R,G,B, default: 85,255,255)\n");
     printf("  -K <color>       Alien 3 color (R,G,B, default: 255,255,85)\n");
@@ -129,6 +131,7 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
     ad->color = GREEN;
     ad->dir = 1;
     ad->speed = DEFAULT_SPEED;
+    ad->anim_speed = -1;
     ad->colorful = false;
     ad->alien_colors[0] = (Color){255, 85, 85, 255};
     ad->alien_colors[1] = (Color){85, 255, 255, 255};
@@ -136,7 +139,7 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
 
     int opt;
     optind = 1;
-    while ((opt = getopt(argc, argv, ":d:CRS:A:G:K:")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:CRS:N:A:G:K:")) != -1) {
         switch (opt) {
             case 'C': ad->colorful = true; break;
             case 'R': ad->dir = -1; break;
@@ -144,11 +147,17 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
                 ad->speed = atoi(optarg);
                 if (ad->speed < 1) ad->speed = 1;
                 break;
+            case 'N':
+                ad->anim_speed = atoi(optarg);
+                if (ad->anim_speed < 1) ad->anim_speed = 1;
+                break;
             case 'A': ad->alien_colors[0] = ParseColor(optarg); break;
             case 'G': ad->alien_colors[1] = ParseColor(optarg); break;
             case 'K': ad->alien_colors[2] = ParseColor(optarg); break;
         }
     }
+
+    if (ad->anim_speed < 0) ad->anim_speed = ad->speed;
 
     return ad;
 }
@@ -183,11 +192,12 @@ static void UpdateFrame(Grid *grid, void *data) {
     if (ad->tick >= ad->speed) {
         ad->tick = 0;
         ad->offset += ad->dir;
-        ad->anim_counter++;
-        if (ad->anim_counter >= 4) {
-            ad->anim_counter = 0;
-            ad->frame = (ad->frame + 1) % NUM_FRAMES;
-        }
+    }
+
+    ad->anim_tick++;
+    if (ad->anim_tick >= ad->anim_speed) {
+        ad->anim_tick = 0;
+        ad->frame = (ad->frame + 1) % NUM_FRAMES;
     }
 }
 
