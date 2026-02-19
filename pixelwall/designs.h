@@ -25,6 +25,7 @@ extern Design pongDesign;
 extern Design lifeDesign;
 extern Design cm5Design;
 extern Design arcadeDesign;
+extern Design clockDesign;
 
 Design *designs[] = {
     &snakeDesign,
@@ -34,4 +35,5 @@ Design *designs[] = {
     &lifeDesign,
     &cm5Design,
     &arcadeDesign,
+    &clockDesign,
 };
