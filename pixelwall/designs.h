@@ -33,6 +33,7 @@ extern Design invadersDesign;
 extern Design alienMarchDesign;
 extern Design pacmanMarchDesign;
 extern Design spritesheetDesign;
+extern Design walkieDesign;
 
 Design *designs[] = {
     &snakeDesign,
@@ -50,4 +51,5 @@ Design *designs[] = {
     &alienMarchDesign,
     &pacmanMarchDesign,
     &spritesheetDesign,
+    &walkieDesign,
 };
