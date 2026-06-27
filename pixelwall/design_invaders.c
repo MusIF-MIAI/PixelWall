@@ -34,6 +34,7 @@ typedef struct {
     int tick;
     int enemies_alive;
     bool colorful;
+    bool manual;
     Color color;
     Color enemy_color;
     Color player_color;
@@ -77,6 +78,7 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
     id->bullet_color = (Color){255, 255, 85, 255};
     id->ebullet_color = (Color){255, 85, 255, 255};
     id->player_x = 11;
+    id->manual = false;
 
     int opt;
     optind = 1;
@@ -117,7 +119,16 @@ static void UpdateFrame(Grid *grid, void *data) {
     InvadersData *id = (InvadersData *)data;
     Color bg = grid->conf.backgroundColor;
 
+    if (!id->manual && ControllerAnyButtonDown(grid)) {
+        id->manual = true;
+        id->player_x = 11;
+        ResetWave(id);
+    }
+
     id->tick++;
+    if (id->manual) {
+        id->tick = MOVE_TICKS;
+    }
     if (id->tick < MOVE_TICKS) return;
     id->tick = 0;
 
@@ -212,17 +223,21 @@ bullet_done:;
     }
 fire_done:;
 
-    // AI player: move toward nearest enemy and fire
-    int target = NearestEnemyCol(id);
-    if (target >= 0) {
-        if (id->player_x < target) id->player_x++;
-        else if (id->player_x > target) id->player_x--;
+    if (id->manual) {
+        id->player_x += ControllerMoveX(grid, 0);
+    } else {
+        // AI player: move toward nearest enemy and fire
+        int target = NearestEnemyCol(id);
+        if (target >= 0) {
+            if (id->player_x < target) id->player_x++;
+            else if (id->player_x > target) id->player_x--;
+        }
     }
     if (id->player_x < PLAYER_HALF) id->player_x = PLAYER_HALF;
     if (id->player_x > grid->cols - 1 - PLAYER_HALF) id->player_x = grid->cols - 1 - PLAYER_HALF;
 
     // Player fires
-    if (id->bullet_y < 0 && (rand() % 2) == 0) {
+    if (id->bullet_y < 0 && ((id->manual && ControllerActionDown(grid, 0)) || (!id->manual && (rand() % 2) == 0))) {
         id->bullet_x = id->player_x;
         id->bullet_y = PLAYER_ROW - 1;
     }

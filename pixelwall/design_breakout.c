@@ -31,6 +31,7 @@ typedef struct {
     Pos ball;
     Pos direction;
     int paddle_x;
+    bool manual;
     bool bricks[BRICK_ROWS][BRICK_COLS];
     int bricks_remaining;
 } BreakoutData;
@@ -107,6 +108,7 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
     bd->ball_color = (Color){255, 255, 85, 255};       // CGA Yellow
     bd->paddle_color = (Color){255, 255, 255, 255};    // White
     bd->paddle_half = DEFAULT_PADDLE_HALF;
+    bd->manual = false;
 
     ParseOptions(bd, argc, argv);
     ResetBricks(bd);
@@ -121,6 +123,13 @@ static void *Create(Grid *grid, int argc, char *argv[]) {
 static void UpdateFrame(Grid *grid, void *data) {
     BreakoutData *bd = (BreakoutData *)data;
     Color bg = grid->conf.backgroundColor;
+
+    if (!bd->manual && ControllerAnyButtonDown(grid)) {
+        bd->manual = true;
+        ResetBricks(bd);
+        ResetBall(bd);
+        bd->paddle_x = 11;
+    }
 
     GridFillColor(grid, bg);
 
@@ -175,11 +184,15 @@ static void UpdateFrame(Grid *grid, void *data) {
     if (bd->ball.y < 0) bd->ball.y = 0;
     if (bd->ball.y > PADDLE_ROW) bd->ball.y = PADDLE_ROW;
 
-    // AI paddle: move toward ball with slight randomness
-    int jitter = (rand() % 3) - 1;
-    int target = bd->ball.x + jitter;
-    if (bd->paddle_x < target) bd->paddle_x++;
-    if (bd->paddle_x > target) bd->paddle_x--;
+    if (bd->manual) {
+        bd->paddle_x += ControllerMoveX(grid, 0);
+    } else {
+        // AI paddle: move toward ball with slight randomness
+        int jitter = (rand() % 3) - 1;
+        int target = bd->ball.x + jitter;
+        if (bd->paddle_x < target) bd->paddle_x++;
+        if (bd->paddle_x > target) bd->paddle_x--;
+    }
     if (bd->paddle_x < bd->paddle_half) bd->paddle_x = bd->paddle_half;
     if (bd->paddle_x > 21 - bd->paddle_half) bd->paddle_x = 21 - bd->paddle_half;
 

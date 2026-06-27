@@ -42,6 +42,7 @@ make clean            # Remove build artifacts
 | `-f <rate>` | Frame rate | `10` |
 | `-b <size>` | Border size (0 to disable) | `4` |
 | `-T <seconds>` | Auto-change design interval (0 to disable) | `0` |
+| `--disable-controller` | Disable gamepad takeover for game-like designs | off |
 | `-h` | Show help | |
 
 ### Keyboard Controls
@@ -53,6 +54,18 @@ make clean            # Remove build artifacts
 | `V` | Toggle green tint |
 | `,` / `.` | Previous / next design |
 | `T` | Toggle timer display |
+
+### Bluetooth Controller Controls
+
+Game-like AI designs keep their normal animation until a connected gamepad button is pressed. After that, the design restarts as an interactive game. Use `--disable-controller` to keep the original AI-only behavior.
+
+| Design | Controls |
+|--------|----------|
+| `pong` | Gamepad 0 moves the left paddle; gamepad 1 moves the right paddle |
+| `snake` | Gamepad 0 d-pad/left stick changes direction |
+| `breakout` | Gamepad 0 d-pad/left stick moves the paddle |
+| `tetris` | Gamepad 0 left/right moves, down soft-drops, face buttons/right triggers rotate |
+| `invaders` | Gamepad 0 left/right moves, face buttons/right triggers fire |
 
 ## Designs
 

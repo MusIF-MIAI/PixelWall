@@ -40,6 +40,7 @@ typedef struct {
     int paddle2_y; // Position of the right paddle (y-coordinate)
     int prev_paddle1_y; // Previous position of the left paddle
     int prev_paddle2_y; // Previous position of the right paddle
+    bool manual;
 } PongData;
 
 static void PongPrintHelp() {
@@ -64,6 +65,15 @@ static void ParseOptions(PongConf *conf, int argc, char *argv[]) {
     }
 }
 
+static void ResetPong(PongData *pd) {
+    pd->paddle1_y = pd->rows / 2;
+    pd->paddle2_y = pd->rows / 2;
+    pd->ball = (Pos) { pd->cols / 2, pd->rows / 2 };
+    pd->direction = (Pos) {1, 1};
+    pd->prev_paddle1_y = pd->paddle1_y;
+    pd->prev_paddle2_y = pd->paddle2_y;
+}
+
 static void* PongCreate(Grid *grid, int argc, char *argv[]) {
     PongData *pd = malloc(sizeof(PongData));
     if (!pd) return NULL;
@@ -72,23 +82,42 @@ static void* PongCreate(Grid *grid, int argc, char *argv[]) {
 
     pd->rows = grid->conf.rows - 2 * pd->conf.margin;
     pd->cols = grid->conf.cols - 2 * pd->conf.margin;
+    pd->manual = false;
 
-    // Initialize paddles and ball
-    pd->paddle1_y = pd->rows / 2;
-    pd->paddle2_y = pd->rows / 2;
-    pd->ball = (Pos) { pd->cols / 2, pd->rows / 2 };
-    pd->direction = (Pos) {1, 1};
-
-    // Initialize previous paddle positions
-    pd->prev_paddle1_y = pd->paddle1_y;
-    pd->prev_paddle2_y = pd->paddle2_y;
+    ResetPong(pd);
 
     srand(time(NULL));
     return pd;
 }
 
+static void UpdateAIPaddles(PongData *pd) {
+    static int changes[] = { -1, 0, 1 };
+    pd->paddle1_y += changes[rand() % 3];
+    pd->paddle2_y += changes[rand() % 3];
+
+    if (pd->ball.y > pd->paddle1_y) pd->paddle1_y++;
+    if (pd->ball.y < pd->paddle1_y) pd->paddle1_y--;
+    if (pd->ball.y > pd->paddle2_y) pd->paddle2_y++;
+    if (pd->ball.y < pd->paddle2_y) pd->paddle2_y--;
+}
+
+static void UpdatePaddleForGamepad(Grid *grid, PongData *pd, int gamepad, int *paddle_y) {
+    if (!ControllerAvailable(grid, gamepad)) {
+        if (pd->ball.y > *paddle_y) (*paddle_y)++;
+        if (pd->ball.y < *paddle_y) (*paddle_y)--;
+        return;
+    }
+
+    *paddle_y += ControllerMoveY(grid, gamepad);
+}
+
 static void PongUpdateFrame(Grid *grid, void *data) {
     PongData *pd = (PongData*)data;
+
+    if (!pd->manual && ControllerAnyButtonDown(grid)) {
+        pd->manual = true;
+        ResetPong(pd);
+    }
 
     // Clear the previous ball position
     Pos prev_ball = {pd->conf.margin + pd->ball.x, pd->conf.margin + pd->ball.y};
@@ -128,16 +157,12 @@ static void PongUpdateFrame(Grid *grid, void *data) {
         pd->direction.x = (pd->ball.x < 0) ? 1 : -1; // Set direction based on which side it went out
     }
 
-    // randomly increment or decrement paddles
-    static int changes[] = { -1, 0, 1 };
-    pd->paddle1_y += changes[rand() % 3];
-    pd->paddle2_y += changes[rand() % 3];
-    
-    // Move paddles (simple AI or user input can be added here)
-    if (pd->ball.y > pd->paddle1_y) pd->paddle1_y++;
-    if (pd->ball.y < pd->paddle1_y) pd->paddle1_y--;
-    if (pd->ball.y > pd->paddle2_y) pd->paddle2_y++;
-    if (pd->ball.y < pd->paddle2_y) pd->paddle2_y--;
+    if (pd->manual) {
+        UpdatePaddleForGamepad(grid, pd, 0, &pd->paddle1_y);
+        UpdatePaddleForGamepad(grid, pd, 1, &pd->paddle2_y);
+    } else {
+        UpdateAIPaddles(pd);
+    }
 
     // Ensure paddles stay within the grid
     if (pd->paddle1_y < pd->conf.paddle_len) pd->paddle1_y = pd->conf.paddle_len;

@@ -52,6 +52,7 @@ typedef struct {
     Fruit fruit;        // The fruit object
     Pos currentDir;     // Current movement direction
     bool gameOver;      // Game over flag
+    bool manual;        // Controlled by gamepad after takeover
 } GameState;
 
 #define CELL_WORM  (1 << 0)
@@ -114,6 +115,20 @@ static void InitializeFruit(Grid *grid, GameState *state) {
     // Mark position in grid
     GridSetColor(grid, pos, state->fruit.color);
     GridSetFruit(grid, pos, true);
+}
+
+static void ResetSnake(Grid *grid, GameState *state) {
+    if (state->worm.body) {
+        free(state->worm.body);
+        state->worm.body = NULL;
+    }
+
+    GridFillColor(grid, grid->conf.backgroundColor);
+    GridFillData(grid, 0);
+    InitializeWorm(grid, state);
+    InitializeFruit(grid, state);
+    state->currentDir = GetRandomDirection();
+    state->gameOver = false;
 }
 
 static bool IsPositionValid(const Grid *grid, Pos pos) {
@@ -216,6 +231,28 @@ static void UpdateAI(Grid *grid, GameState *state) {
     // If no safe moves found, keep current direction (will trigger game over)
 }
 
+static void UpdateManualInput(Grid *grid, GameState *state) {
+    Pos dir = {0, 0};
+    int move_x = ControllerMoveX(grid, 0);
+    int move_y = ControllerMoveY(grid, 0);
+
+    if (move_x != 0) {
+        dir = (Pos){move_x, 0};
+    } else if (move_y != 0) {
+        dir = (Pos){0, move_y};
+    }
+
+    if (dir.x == 0 && dir.y == 0) return;
+
+    if (state->worm.length > 1 &&
+        dir.x == -state->currentDir.x &&
+        dir.y == -state->currentDir.y) {
+        return;
+    }
+
+    state->currentDir = dir;
+}
+
 // Handle fruit collision and create new fruit
 static void HandleFruitCollision(Grid *grid, GameState *state) {
     // Increase worm length if possible
@@ -281,6 +318,7 @@ static void *SnakeCreate(Grid *grid, int argc, char *argv[]) {
     memset(state, 0, sizeof(GameState));
     state->conf = defaultSnakeConf;
     ParseSnakeOptions(&state->conf, argc, argv);
+    state->manual = false;
 
     InitializeWorm(grid, state);
     InitializeFruit(grid, state);
@@ -293,18 +331,25 @@ static void *SnakeCreate(Grid *grid, int argc, char *argv[]) {
 static void SnakeUpdateFrame(Grid *grid, void *data) {
     // Update game state
     GameState *state = (GameState *)data;
+
+    if (!state->manual && ControllerAnyButtonDown(grid)) {
+        state->manual = true;
+        ResetSnake(grid, state);
+        state->currentDir = (Pos){1, 0};
+    }
+
     if (state->gameOver) {
-        // Reset game state if game over
-        GridFillColor(grid, grid->conf.backgroundColor);
-        GridFillData(grid, 0);
-        InitializeWorm(grid, state);
-        InitializeFruit(grid, state);
-        state->currentDir = GetRandomDirection();
-        state->gameOver = false;
+        ResetSnake(grid, state);
+        if (state->manual) {
+            state->currentDir = (Pos){1, 0};
+        }
     }
     else {
-        // Update AI and check for collisions
-        UpdateAI(grid, state);
+        if (state->manual) {
+            UpdateManualInput(grid, state);
+        } else {
+            UpdateAI(grid, state);
+        }
         
         Pos newHead = CalculateNewHead(state);
         if (CheckGameOver(grid, newHead)) {

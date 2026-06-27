@@ -38,6 +38,7 @@ typedef struct {
     Color borderColor;
     bool showData;
     bool horizontalFlip;
+    bool controllersEnabled;
     int designIndex;
     float changeTimer;
 } Config;
@@ -97,5 +98,11 @@ Pos GetRandomPositionIn(int rows, int cols);
 
 Direction ParseDirection(const char *string);
 Color ParseColor(const char *string);
+
+bool ControllerAvailable(const Grid *grid, int gamepad);
+bool ControllerAnyButtonDown(const Grid *grid);
+int ControllerMoveX(const Grid *grid, int gamepad);
+int ControllerMoveY(const Grid *grid, int gamepad);
+bool ControllerActionDown(const Grid *grid, int gamepad);
 
 extern ArcadeFont fonts;

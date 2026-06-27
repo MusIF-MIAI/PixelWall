@@ -31,10 +31,13 @@ Config defaultConf = {
     .showData = false,
     .designIndex = 0,
     .horizontalFlip = false,
+    .controllersEnabled = true,
     .changeTimer = 0,
 };
 
 #define MAX_COLOR_VALUE 255
+#define MAX_GAMEPADS 4
+#define GAMEPAD_DEADZONE 0.45f
 
 ArcadeFont fonts;
 Grid theGrid;
@@ -84,6 +87,54 @@ Pos GetRandomPositionIn(int rows, int cols) {
         GetRandomValue(0, cols - 1),
         GetRandomValue(0, rows - 1),
     };
+}
+
+bool ControllerAvailable(const Grid *grid, int gamepad) {
+    return grid->conf.controllersEnabled && IsGamepadAvailable(gamepad);
+}
+
+static int AxisDirection(float value) {
+    if (value < -GAMEPAD_DEADZONE) return -1;
+    if (value > GAMEPAD_DEADZONE) return 1;
+    return 0;
+}
+
+bool ControllerAnyButtonDown(const Grid *grid) {
+    if (!grid->conf.controllersEnabled) return false;
+
+    for (int gamepad = 0; gamepad < MAX_GAMEPADS; gamepad++) {
+        if (!IsGamepadAvailable(gamepad)) continue;
+
+        for (int button = GAMEPAD_BUTTON_LEFT_FACE_UP; button <= GAMEPAD_BUTTON_RIGHT_THUMB; button++) {
+            if (IsGamepadButtonDown(gamepad, button)) return true;
+        }
+    }
+
+    return false;
+}
+
+int ControllerMoveX(const Grid *grid, int gamepad) {
+    if (!ControllerAvailable(grid, gamepad)) return 0;
+    if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) return -1;
+    if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) return 1;
+    return AxisDirection(GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_X));
+}
+
+int ControllerMoveY(const Grid *grid, int gamepad) {
+    if (!ControllerAvailable(grid, gamepad)) return 0;
+    if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_FACE_UP)) return -1;
+    if (IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) return 1;
+    return AxisDirection(GetGamepadAxisMovement(gamepad, GAMEPAD_AXIS_LEFT_Y));
+}
+
+bool ControllerActionDown(const Grid *grid, int gamepad) {
+    if (!ControllerAvailable(grid, gamepad)) return false;
+    return IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_DOWN) ||
+           IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT) ||
+           IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_LEFT) ||
+           IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_FACE_UP) ||
+           IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_TRIGGER_1) ||
+           IsGamepadButtonDown(gamepad, GAMEPAD_BUTTON_RIGHT_TRIGGER_2);
 }
 
 void DrawPixelGrid(const Grid *grid) {
@@ -202,6 +253,8 @@ void PrintHelp(int argc, char *argv[]) {
     printf("  -i <interval>    Set move interval in seconds (default: %.1f)\n", defaultConf.moveInterval);
     printf("  -b <size>        Set border size (default: %d). Use 0 to disable it\n", defaultConf.borderSize);
     printf("  -T <seconds>     Change design every <seconds> (default: %d)\n", (int)defaultConf.changeTimer);
+    printf("  --disable-controller\n");
+    printf("                   Disable gamepad takeover; game-like designs stay in AI animation mode\n");
     printf("  -h               Show this help message\n");
 
     printf("\n");
@@ -237,7 +290,7 @@ Color ParseColor(const char *string) {
 Config ParseCommandLine(int argc, char *argv[]) {
     int opt;
     Config conf = defaultConf;
-    while ((opt = getopt(argc, argv, ":d:r:c:w:H:Ff:b:B:O:T:h")) != -1) {
+    while ((opt = getopt(argc, argv, ":d:r:c:w:H:Ff:i:b:B:O:T:h")) != -1) {
         switch (opt) {
             case 'd':
                 for (int i = 0; i < sizeof(designs) / sizeof(Design *); i++) {
@@ -305,12 +358,31 @@ void *DesignCreate(Design *design, Grid *grid, int argc, char **argv) {
 
 // Main game loop
 int main(int argc, char *argv[]) {
-    // Save argv before getopt permutes it
+    bool disableControllers = false;
+    int filtered_argc = 0;
     char **argv_orig = malloc(argc * sizeof(char *));
-    for (int i = 0; i < argc; i++) argv_orig[i] = argv[i];
+    char **argv_parse = malloc(argc * sizeof(char *));
+    if (!argv_orig || !argv_parse) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int i = 0; i < argc; i++) {
+        if (strcmp(argv[i], "--disable-controller") == 0) {
+            disableControllers = true;
+            continue;
+        }
+
+        argv_orig[filtered_argc] = argv[i];
+        argv_parse[filtered_argc] = argv[i];
+        filtered_argc++;
+    }
 
     Grid *grid = &theGrid;
-    Config conf = ParseCommandLine(argc, argv);
+    Config conf = ParseCommandLine(filtered_argc, argv_parse);
+    if (disableControllers) {
+        conf.controllersEnabled = false;
+    }
 
     // Initialize window and set frame rate
     InitWindow(conf.windowWidth, conf.windowHeight, "Pixelwall");
@@ -323,7 +395,7 @@ int main(int argc, char *argv[]) {
     Design *design = designs[conf.designIndex];
 
     printf("Starting design: %s\n", design->name);
-    void *data = DesignCreate(design, grid, argc, argv_orig);
+    void *data = DesignCreate(design, grid, filtered_argc, argv_orig);
 
     float changeTimer = conf.changeTimer;
     float timer = 0;
@@ -394,7 +466,7 @@ int main(int argc, char *argv[]) {
             printf("Switching to design: %s\n", design->name);
             GridFillColor(grid, grid->conf.backgroundColor);
             GridFillData(grid, 0);
-            data = DesignCreate(design, grid, argc, argv_orig);
+            data = DesignCreate(design, grid, filtered_argc, argv_orig);
             if (!data) {
                 fprintf(stderr, "Failed to create design: %s, skipping\n", design->name);
             }
@@ -430,5 +502,7 @@ int main(int argc, char *argv[]) {
     if (data) design->Destroy(data);
     GridCleanup(grid);
     CloseWindow();
+    free(argv_orig);
+    free(argv_parse);
     return 0;
 }

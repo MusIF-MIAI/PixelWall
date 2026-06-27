@@ -65,6 +65,7 @@ typedef struct {
     int tick;
     int target_x, target_rot;
     bool colorful;
+    bool manual;
     Color color;
     Color piece_colors[NUM_PIECES];
     Color border_color;
@@ -165,6 +166,13 @@ static void SpawnPiece(TetrisData *td) {
     AIChoose(td);
 }
 
+static void ResetGame(TetrisData *td) {
+    memset(td->field, 0, sizeof(td->field));
+    memset(td->field_color, 0, sizeof(td->field_color));
+    td->tick = 0;
+    SpawnPiece(td);
+}
+
 static void ClearRows(TetrisData *td) {
     for (int r = FIELD_H - 1; r >= 0; r--) {
         bool full = true;
@@ -187,98 +195,9 @@ static void ClearRows(TetrisData *td) {
     }
 }
 
-static void PrintHelp() {
-    printf("  -C               Enable colored mode\n");
-    printf("  -I <color>       I-piece color (R,G,B, default: 85,255,255)\n");
-    printf("  -Q <color>       O-piece color (R,G,B, default: 255,255,85)\n");
-    printf("  -S <color>       S-piece color (R,G,B, default: 85,255,85)\n");
-    printf("  -Z <color>       Z-piece color (R,G,B, default: 255,85,85)\n");
-    printf("  -L <color>       L-piece color (R,G,B, default: 255,170,0)\n");
-    printf("  -J <color>       J-piece color (R,G,B, default: 85,85,255)\n");
-    printf("  -K <color>       T-piece color (R,G,B, default: 255,85,255)\n");
-    printf("  -W <color>       Border/wall color (R,G,B, default: 170,170,170)\n");
-}
-
-static void *Create(Grid *grid, int argc, char *argv[]) {
-    (void)grid;
-    TetrisData *td = calloc(1, sizeof(TetrisData));
-    if (!td) return NULL;
-
-    td->color = GREEN;
-    td->colorful = false;
-    memcpy(td->piece_colors, default_piece_colors, sizeof(td->piece_colors));
-    td->border_color = (Color){170, 170, 170, 255};
-
-    int opt;
-    optind = 1;
-    while ((opt = getopt(argc, argv, ":d:CI:Q:S:Z:L:J:K:W:")) != -1) {
-        switch (opt) {
-            case 'C': td->colorful = true; break;
-            case 'I': td->piece_colors[0] = ParseColor(optarg); break;
-            case 'Q': td->piece_colors[1] = ParseColor(optarg); break;
-            case 'K': td->piece_colors[2] = ParseColor(optarg); break;
-            case 'S': td->piece_colors[3] = ParseColor(optarg); break;
-            case 'Z': td->piece_colors[4] = ParseColor(optarg); break;
-            case 'L': td->piece_colors[5] = ParseColor(optarg); break;
-            case 'J': td->piece_colors[6] = ParseColor(optarg); break;
-            case 'W': td->border_color = ParseColor(optarg); break;
-        }
-    }
-
-    srand(time(NULL));
-    SpawnPiece(td);
-    return td;
-}
-
-static void UpdateFrame(Grid *grid, void *data) {
-    TetrisData *td = (TetrisData *)data;
+static void DrawTetris(Grid *grid, TetrisData *td) {
     Color bg = grid->conf.backgroundColor;
 
-    td->tick++;
-    if (td->tick < DROP_TICKS) return;
-    td->tick = 0;
-
-    // Move piece toward target rotation and x
-    if (td->rotation != td->target_rot) {
-        int next_rot = (td->rotation + 1) % 4;
-        if (!Collides(td, td->piece, next_rot, td->piece_x, td->piece_y))
-            td->rotation = next_rot;
-    }
-    if (td->piece_x < td->target_x) {
-        if (!Collides(td, td->piece, td->rotation, td->piece_x + 1, td->piece_y))
-            td->piece_x++;
-    } else if (td->piece_x > td->target_x) {
-        if (!Collides(td, td->piece, td->rotation, td->piece_x - 1, td->piece_y))
-            td->piece_x--;
-    }
-
-    // Drop
-    if (!Collides(td, td->piece, td->rotation, td->piece_x, td->piece_y + 1)) {
-        td->piece_y++;
-    } else {
-        // Lock piece
-        for (int r = 0; r < 4; r++) {
-            for (int c = 0; c < 4; c++) {
-                if (!PieceCell(td->piece, td->rotation, r, c)) continue;
-                int fy = td->piece_y + r;
-                int fx = td->piece_x + c;
-                if (fy >= 0 && fy < FIELD_H && fx >= 0 && fx < FIELD_W) {
-                    td->field[fy][fx] = 1;
-                    td->field_color[fy][fx] = td->piece;
-                }
-            }
-        }
-        ClearRows(td);
-        SpawnPiece(td);
-        // If new piece immediately collides, reset
-        if (Collides(td, td->piece, td->rotation, td->piece_x, td->piece_y)) {
-            memset(td->field, 0, sizeof(td->field));
-            memset(td->field_color, 0, sizeof(td->field_color));
-            SpawnPiece(td);
-        }
-    }
-
-    // Draw
     GridFillColor(grid, bg);
 
     // Draw field
@@ -309,6 +228,132 @@ static void UpdateFrame(Grid *grid, void *data) {
         GridSetColor(grid, (Pos){FIELD_X - 1, r}, border);
         GridSetColor(grid, (Pos){FIELD_X + FIELD_W, r}, border);
     }
+}
+
+static void PrintHelp() {
+    printf("  -C               Enable colored mode\n");
+    printf("  -I <color>       I-piece color (R,G,B, default: 85,255,255)\n");
+    printf("  -Q <color>       O-piece color (R,G,B, default: 255,255,85)\n");
+    printf("  -S <color>       S-piece color (R,G,B, default: 85,255,85)\n");
+    printf("  -Z <color>       Z-piece color (R,G,B, default: 255,85,85)\n");
+    printf("  -L <color>       L-piece color (R,G,B, default: 255,170,0)\n");
+    printf("  -J <color>       J-piece color (R,G,B, default: 85,85,255)\n");
+    printf("  -K <color>       T-piece color (R,G,B, default: 255,85,255)\n");
+    printf("  -W <color>       Border/wall color (R,G,B, default: 170,170,170)\n");
+}
+
+static void *Create(Grid *grid, int argc, char *argv[]) {
+    (void)grid;
+    TetrisData *td = calloc(1, sizeof(TetrisData));
+    if (!td) return NULL;
+
+    td->color = GREEN;
+    td->colorful = false;
+    td->manual = false;
+    memcpy(td->piece_colors, default_piece_colors, sizeof(td->piece_colors));
+    td->border_color = (Color){170, 170, 170, 255};
+
+    int opt;
+    optind = 1;
+    while ((opt = getopt(argc, argv, ":d:CI:Q:S:Z:L:J:K:W:")) != -1) {
+        switch (opt) {
+            case 'C': td->colorful = true; break;
+            case 'I': td->piece_colors[0] = ParseColor(optarg); break;
+            case 'Q': td->piece_colors[1] = ParseColor(optarg); break;
+            case 'K': td->piece_colors[2] = ParseColor(optarg); break;
+            case 'S': td->piece_colors[3] = ParseColor(optarg); break;
+            case 'Z': td->piece_colors[4] = ParseColor(optarg); break;
+            case 'L': td->piece_colors[5] = ParseColor(optarg); break;
+            case 'J': td->piece_colors[6] = ParseColor(optarg); break;
+            case 'W': td->border_color = ParseColor(optarg); break;
+        }
+    }
+
+    srand(time(NULL));
+    ResetGame(td);
+    return td;
+}
+
+static void ApplyManualInput(Grid *grid, TetrisData *td) {
+    int move_x = ControllerMoveX(grid, 0);
+    if (move_x != 0 && !Collides(td, td->piece, td->rotation, td->piece_x + move_x, td->piece_y)) {
+        td->piece_x += move_x;
+    }
+
+    if (ControllerActionDown(grid, 0)) {
+        int next_rot = (td->rotation + 1) % 4;
+        if (!Collides(td, td->piece, next_rot, td->piece_x, td->piece_y)) {
+            td->rotation = next_rot;
+        }
+    }
+
+    if (ControllerMoveY(grid, 0) > 0 && !Collides(td, td->piece, td->rotation, td->piece_x, td->piece_y + 1)) {
+        td->piece_y++;
+    }
+}
+
+static void UpdateFrame(Grid *grid, void *data) {
+    TetrisData *td = (TetrisData *)data;
+    bool just_started = false;
+
+    if (!td->manual && ControllerAnyButtonDown(grid)) {
+        td->manual = true;
+        ResetGame(td);
+        just_started = true;
+    }
+
+    if (td->manual && !just_started) {
+        ApplyManualInput(grid, td);
+    }
+
+    td->tick++;
+    if (td->tick < DROP_TICKS) {
+        DrawTetris(grid, td);
+        return;
+    }
+    td->tick = 0;
+
+    if (!td->manual) {
+        // Move piece toward target rotation and x
+        if (td->rotation != td->target_rot) {
+            int next_rot = (td->rotation + 1) % 4;
+            if (!Collides(td, td->piece, next_rot, td->piece_x, td->piece_y))
+                td->rotation = next_rot;
+        }
+        if (td->piece_x < td->target_x) {
+            if (!Collides(td, td->piece, td->rotation, td->piece_x + 1, td->piece_y))
+                td->piece_x++;
+        } else if (td->piece_x > td->target_x) {
+            if (!Collides(td, td->piece, td->rotation, td->piece_x - 1, td->piece_y))
+                td->piece_x--;
+        }
+    }
+
+    // Drop
+    if (!Collides(td, td->piece, td->rotation, td->piece_x, td->piece_y + 1)) {
+        td->piece_y++;
+    } else {
+        // Lock piece
+        for (int r = 0; r < 4; r++) {
+            for (int c = 0; c < 4; c++) {
+                if (!PieceCell(td->piece, td->rotation, r, c)) continue;
+                int fy = td->piece_y + r;
+                int fx = td->piece_x + c;
+                if (fy >= 0 && fy < FIELD_H && fx >= 0 && fx < FIELD_W) {
+                    td->field[fy][fx] = 1;
+                    td->field_color[fy][fx] = td->piece;
+                }
+            }
+        }
+        ClearRows(td);
+        SpawnPiece(td);
+        // If new piece immediately collides, reset
+        if (Collides(td, td->piece, td->rotation, td->piece_x, td->piece_y)) {
+            ResetGame(td);
+        }
+    }
+
+    DrawTetris(grid, td);
 }
 
 static void Destroy(void *data) {
